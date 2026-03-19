@@ -1,0 +1,91 @@
+.script-card {
+  display: flex;
+  align-items: stretch;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+  overflow: hidden;
+}
+
+.script-card:hover {
+  background: var(--bg-hover);
+  transform: translateX(2px);
+}
+
+.script-card.selected {
+  background: var(--bg-hover);
+}
+
+.script-card-indicator {
+  width: 3px;
+  flex-shrink: 0;
+  background: var(--text-secondary);
+  opacity: 0.3;
+  transition: background 0.3s ease, opacity 0.3s ease;
+}
+
+.script-card.selected .script-card-indicator {
+  background: var(--accent);
+  opacity: 1;
+}
+
+.script-card.status-running .script-card-indicator {
+  background: var(--status-running);
+  opacity: 1;
+  animation: breathe 1.5s ease-in-out infinite;
+}
+
+.script-card.status-completed .script-card-indicator {
+  background: var(--status-success);
+  opacity: 1;
+}
+
+.script-card.status-failed .script-card-indicator {
+  background: var(--status-fail);
+  opacity: 1;
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.script-card-content {
+  padding: 10px 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.script-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.script-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.script-card-status {
+  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.script-card-status.status-idle { color: var(--text-secondary); }
+.script-card-status.status-running { color: var(--status-running); }
+.script-card-status.status-completed { color: var(--status-success); }
+.script-card-status.status-failed { color: var(--status-fail); }
+
+.script-card-size {
+  color: var(--text-secondary);
+}

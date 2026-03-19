@@ -1,0 +1,161 @@
+.log-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+  overflow: hidden;
+}
+
+.log-panel.empty {
+  align-items: center;
+  justify-content: center;
+}
+
+.log-panel-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.log-panel-header {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.log-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.log-panel-filename {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.log-panel-status {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.log-panel-status.status-idle { color: var(--text-secondary); background: rgba(143,147,162,0.1); }
+.log-panel-status.status-running { color: var(--status-running); background: rgba(255,192,72,0.1); }
+.log-panel-status.status-completed { color: var(--status-success); background: rgba(0,214,143,0.1); }
+.log-panel-status.status-failed { color: var(--status-fail); background: rgba(255,107,107,0.1); }
+
+.log-panel-header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.log-panel-scroll-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.log-panel-scroll-btn:hover { background: var(--bg-hover); }
+.log-panel-scroll-btn.active { color: var(--accent-light); }
+
+.log-panel-terminal {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+  background: var(--bg-terminal);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.log-panel-no-logs {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.log-line {
+  animation: fadeInUp 0.15s ease;
+}
+
+.log-line-text { white-space: pre-wrap; word-break: break-all; }
+
+.log-info .log-line-text { color: var(--text-primary); }
+.log-warn .log-line-text { color: var(--status-running); }
+.log-error .log-line-text { color: var(--status-fail); }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.log-panel-actions {
+  padding: 12px 16px;
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.action-btn {
+  height: 34px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 6px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.1s, box-shadow 0.15s;
+}
+
+.action-btn:active {
+  transform: scale(0.97);
+}
+
+.action-run {
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
+  color: white;
+}
+
+.action-run:hover {
+  box-shadow: 0 0 20px rgba(108, 92, 231, 0.4);
+}
+
+.action-stop {
+  background: var(--status-fail);
+  color: white;
+}
+
+.action-stop:hover {
+  box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+}
+
+.action-clear {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.action-clear:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
