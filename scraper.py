@@ -46,3 +46,73 @@ async def search_amazon(page: Page, keyword: str):
     await page.keyboard.press("Enter")
     await page.wait_for_load_state("domcontentloaded")
     await random_delay()
+
+
+async def parse_search_results(page: Page, max_products: int) -> list[dict]:
+    """Parse product cards from search results page."""
+    # Wait for search results to render
+    await page.wait_for_selector('[data-component-type="s-search-result"]', timeout=config.PAGE_TIMEOUT)
+
+    items = page.locator('[data-component-type="s-search-result"]')
+    count = await items.count()
+    count = min(count, max_products)
+
+    products = []
+    for i in range(count):
+        item = items.nth(i)
+        product = await _extract_product_card(item, rank=i + 1)
+        if product:
+            products.append(product)
+
+    return products
+
+
+async def _extract_product_card(item, rank: int) -> dict | None:
+    """Extract basic info from a single product card."""
+    try:
+        # Title and URL
+        title_el = item.locator("h2 a.a-link-normal")
+        title = await title_el.get_attribute("title") or await title_el.inner_text()
+        href = await title_el.get_attribute("href")
+        product_url = f"https://www.amazon.com{href}" if href and not href.startswith("http") else href
+
+        # Price
+        price = None
+        price_whole = item.locator("span.a-price-whole").first
+        price_fraction = item.locator("span.a-price-fraction").first
+        if await price_whole.count() > 0:
+            whole = await price_whole.inner_text()
+            fraction = await price_fraction.inner_text() if await price_fraction.count() > 0 else "00"
+            price = f"${whole}{fraction}"
+
+        # Rating
+        rating = None
+        rating_el = item.locator("span.a-icon-alt").first
+        if await rating_el.count() > 0:
+            rating_text = await rating_el.inner_text()
+            rating = rating_text.split(" ")[0] if rating_text else None
+
+        # Review count
+        review_count = None
+        review_el = item.locator('[data-csa-c-func-deps="aui-da-a-popover"] + span.a-size-base, a.s-underline-text span.a-size-base').first
+        if await review_el.count() > 0:
+            review_count = await review_el.inner_text()
+
+        # Image
+        image_url = None
+        img_el = item.locator("img.s-image").first
+        if await img_el.count() > 0:
+            image_url = await img_el.get_attribute("src")
+
+        return {
+            "rank": rank,
+            "title": title.strip() if title else None,
+            "price": price,
+            "rating": rating,
+            "review_count": review_count,
+            "product_url": product_url,
+            "image_url": image_url,
+            "detail": None,
+        }
+    except Exception:
+        return None
