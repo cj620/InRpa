@@ -1,0 +1,16 @@
+{
+  "name": "rpa-mpv",
+  "version": "1.0.0",
+  "private": true,
+  "main": "electron/main.js",
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "python -m uvicorn backend.app:app --reload --port 8000",
+    "dev:electron": "electron .",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:electron\""
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "concurrently": "^9.0.0"
+  }
+}

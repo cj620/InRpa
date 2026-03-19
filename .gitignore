@@ -2,3 +2,7 @@ __pycache__/
 output/
 *.png
 *.pyc
+node_modules/
+dist/
+frontend/dist/
+.vite/
