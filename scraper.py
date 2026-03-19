@@ -6,7 +6,7 @@ import os
 import random
 from datetime import datetime
 
-from playwright.async_api import async_playwright, Page, Browser
+from playwright.async_api import async_playwright, Page
 from playwright_stealth import stealth_async
 
 import config
@@ -38,84 +38,94 @@ async def search_amazon(page: Page, keyword: str):
     await page.goto(config.AMAZON_URL)
     await random_delay()
 
+    # Dismiss any delivery location popups
+    try:
+        dismiss_btn = page.locator("#nav-global-location-popover-dismiss, .a-popover-footer input")
+        if await dismiss_btn.count() > 0:
+            await dismiss_btn.first.click()
+            await random_delay()
+    except Exception:
+        pass
+
     search_box = page.locator("#twotabsearchtextbox")
     await search_box.click()
     await search_box.type(keyword, delay=config.TYPE_DELAY_MS)
     await random_delay()
 
     await page.keyboard.press("Enter")
+
+    # Wait for search results URL and page render
+    await page.wait_for_url("**/s?k=*", timeout=config.PAGE_TIMEOUT)
     await page.wait_for_load_state("domcontentloaded")
+    await asyncio.sleep(3)
     await random_delay()
 
 
 async def parse_search_results(page: Page, max_products: int) -> list[dict]:
-    """Parse product cards from search results page."""
-    # Wait for search results to render
-    await page.wait_for_selector('[data-component-type="s-search-result"]', timeout=config.PAGE_TIMEOUT)
+    """Parse product cards from search results page using JS evaluation."""
+    # Use JavaScript to extract product data directly from the DOM
+    products = await page.evaluate("""(maxProducts) => {
+        const results = [];
+        // Try multiple selectors for product cards
+        const cards = document.querySelectorAll(
+            '[data-component-type="s-search-result"], ' +
+            '.s-result-item[data-asin]:not([data-asin=""])'
+        );
 
-    items = page.locator('[data-component-type="s-search-result"]')
-    count = await items.count()
-    count = min(count, max_products)
+        for (let i = 0; i < Math.min(cards.length, maxProducts); i++) {
+            const card = cards[i];
+            try {
+                // Title
+                const titleEl = card.querySelector('h2 span, h2 a span, h2');
+                const title = titleEl ? titleEl.textContent.trim() : null;
 
-    products = []
-    for i in range(count):
-        item = items.nth(i)
-        product = await _extract_product_card(item, rank=i + 1)
-        if product:
-            products.append(product)
+                // URL
+                const linkEl = card.querySelector('a[href*="/dp/"]');
+                const href = linkEl ? linkEl.getAttribute('href') : null;
+                const productUrl = href ? (href.startsWith('http') ? href : 'https://www.amazon.com' + href) : null;
+
+                // Price
+                const priceEl = card.querySelector('span.a-price .a-offscreen');
+                const price = priceEl ? priceEl.textContent.trim() : null;
+
+                // Rating
+                const ratingEl = card.querySelector('span.a-icon-alt');
+                const ratingText = ratingEl ? ratingEl.textContent : null;
+                const rating = ratingText ? ratingText.split(' ')[0] : null;
+
+                // Review count — from aria-label like "7,607 ratings"
+                const reviewLinkEl = card.querySelector('a[aria-label$="ratings"], a[aria-label$="rating"]');
+                let reviewCount = null;
+                if (reviewLinkEl) {
+                    const label = reviewLinkEl.getAttribute('aria-label');
+                    const match = label.match(/^([\\d,]+)/);
+                    reviewCount = match ? match[1] : null;
+                }
+
+                // Image
+                const imgEl = card.querySelector('img.s-image');
+                const imageUrl = imgEl ? imgEl.getAttribute('src') : null;
+
+                if (title) {
+                    results.push({
+                        rank: results.length + 1,
+                        title: title,
+                        price: price,
+                        rating: rating,
+                        review_count: reviewCount,
+                        product_url: productUrl,
+                        image_url: imageUrl,
+                        detail: null
+                    });
+                }
+            } catch(e) {
+                // Skip this card
+            }
+        }
+        return results;
+    }""", max_products)
 
     return products
-
-
-async def _extract_product_card(item, rank: int) -> dict | None:
-    """Extract basic info from a single product card."""
-    try:
-        # Title and URL
-        title_el = item.locator("h2 a.a-link-normal")
-        title = await title_el.get_attribute("title") or await title_el.inner_text()
-        href = await title_el.get_attribute("href")
-        product_url = f"https://www.amazon.com{href}" if href and not href.startswith("http") else href
-
-        # Price
-        price = None
-        price_whole = item.locator("span.a-price-whole").first
-        price_fraction = item.locator("span.a-price-fraction").first
-        if await price_whole.count() > 0:
-            whole = await price_whole.inner_text()
-            fraction = await price_fraction.inner_text() if await price_fraction.count() > 0 else "00"
-            price = f"${whole}{fraction}"
-
-        # Rating
-        rating = None
-        rating_el = item.locator("span.a-icon-alt").first
-        if await rating_el.count() > 0:
-            rating_text = await rating_el.inner_text()
-            rating = rating_text.split(" ")[0] if rating_text else None
-
-        # Review count
-        review_count = None
-        review_el = item.locator('[data-csa-c-func-deps="aui-da-a-popover"] + span.a-size-base, a.s-underline-text span.a-size-base').first
-        if await review_el.count() > 0:
-            review_count = await review_el.inner_text()
-
-        # Image
-        image_url = None
-        img_el = item.locator("img.s-image").first
-        if await img_el.count() > 0:
-            image_url = await img_el.get_attribute("src")
-
-        return {
-            "rank": rank,
-            "title": title.strip() if title else None,
-            "price": price,
-            "rating": rating,
-            "review_count": review_count,
-            "product_url": product_url,
-            "image_url": image_url,
-            "detail": None,
-        }
-    except Exception:
-        return None
 
 
 async def scrape_product_detail(page: Page, product: dict) -> dict | None:
@@ -134,41 +144,39 @@ async def scrape_product_detail(page: Page, product: dict) -> dict | None:
             print("WARNING: CAPTCHA detected, stopping detail extraction.")
             return "CAPTCHA"
 
-        detail = {}
+        # Use JS to extract detail info
+        detail = await page.evaluate("""() => {
+            const detail = {};
 
-        # Brand
-        brand_el = page.locator("#bylineInfo").first
-        if await brand_el.count() > 0:
-            detail["brand"] = (await brand_el.inner_text()).strip()
-        else:
-            detail["brand"] = None
+            // Brand
+            const brandEl = document.querySelector('#bylineInfo');
+            detail.brand = brandEl ? brandEl.textContent.trim() : null;
 
-        # Description — feature bullets
-        bullets = page.locator("#feature-bullets ul li span.a-list-item")
-        if await bullets.count() > 0:
-            texts = []
-            for j in range(await bullets.count()):
-                text = await bullets.nth(j).inner_text()
-                text = text.strip()
-                if text:
-                    texts.append(text)
-            detail["description"] = " | ".join(texts) if texts else None
-        else:
-            detail["description"] = None
+            // Description - feature bullets
+            const bullets = document.querySelectorAll('#feature-bullets ul li span.a-list-item');
+            if (bullets.length > 0) {
+                const texts = [];
+                bullets.forEach(b => {
+                    const t = b.textContent.trim();
+                    if (t) texts.push(t);
+                });
+                detail.description = texts.length > 0 ? texts.join(' | ') : null;
+            } else {
+                // Fallback: product description
+                const descEl = document.querySelector('#productDescription p, #productDescription span');
+                detail.description = descEl ? descEl.textContent.trim() : null;
+            }
 
-        # Seller
-        seller_el = page.locator("#merchant-info, #sellerProfileTriggerId").first
-        if await seller_el.count() > 0:
-            detail["seller"] = (await seller_el.inner_text()).strip()
-        else:
-            detail["seller"] = None
+            // Seller
+            const sellerEl = document.querySelector('#merchant-info, #sellerProfileTriggerId');
+            detail.seller = sellerEl ? sellerEl.textContent.trim() : null;
 
-        # Availability
-        avail_el = page.locator("#availability span").first
-        if await avail_el.count() > 0:
-            detail["availability"] = (await avail_el.inner_text()).strip()
-        else:
-            detail["availability"] = None
+            // Availability
+            const availEl = document.querySelector('#availability span');
+            detail.availability = availEl ? availEl.textContent.trim() : null;
+
+            return detail;
+        }""")
 
         return detail
 
