@@ -9,6 +9,8 @@ from datetime import datetime
 from playwright.async_api import async_playwright, Page
 from playwright_stealth import stealth_async
 
+import sys
+sys.path.insert(0, os.path.dirname(__file__))
 import config
 
 
@@ -231,3 +233,9 @@ async def run_scraper(keyword: str, headless: bool = False):
     finally:
         await browser.close()
         await pw.stop()
+
+
+if __name__ == "__main__":
+    keyword = sys.argv[1] if len(sys.argv) > 1 else config.DEFAULT_KEYWORD
+    headless = "--headless" in sys.argv
+    asyncio.run(run_scraper(keyword, headless=headless))

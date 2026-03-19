@@ -2,16 +2,22 @@
 
 import asyncio
 import inspect
+import subprocess
 import sys
+import threading
 from typing import Callable, Optional
 
 
 class ScriptRunner:
-    """Manages running Python scripts as subprocesses."""
+    """Manages running Python scripts as subprocesses.
+
+    Uses subprocess.Popen instead of asyncio.create_subprocess_exec
+    for Windows compatibility (SelectorEventLoop doesn't support async subprocesses).
+    """
 
     def __init__(self):
         self._statuses: dict[str, str] = {}
-        self._processes: dict[str, asyncio.subprocess.Process] = {}
+        self._processes: dict[str, subprocess.Popen] = {}
 
     def get_status(self, script_path: str) -> str:
         """Get current status of a script: idle, running, completed, failed."""
@@ -23,24 +29,37 @@ class ScriptRunner:
             raise RuntimeError(f"Script is already running: {script_path}")
 
         self._statuses[script_path] = "running"
+        loop = asyncio.get_event_loop()
 
         try:
-            process = await asyncio.create_subprocess_exec(
-                sys.executable, script_path,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
+            process = subprocess.Popen(
+                [sys.executable, "-u", script_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                bufsize=0,
             )
             self._processes[script_path] = process
 
-            async for line in process.stdout:
-                text = line.decode("utf-8", errors="replace").rstrip()
+            queue: asyncio.Queue = asyncio.Queue()
+
+            def read_lines():
+                for raw_line in process.stdout:
+                    text = raw_line.decode("utf-8", errors="replace").rstrip()
+                    asyncio.run_coroutine_threadsafe(queue.put(text), loop)
+                process.wait()
+                asyncio.run_coroutine_threadsafe(queue.put(None), loop)  # sentinel
+
+            threading.Thread(target=read_lines, daemon=True).start()
+
+            while True:
+                line = await queue.get()
+                if line is None:
+                    break
                 if on_log:
                     if inspect.iscoroutinefunction(on_log):
-                        await on_log(text)
+                        await on_log(line)
                     else:
-                        on_log(text)
-
-            await process.wait()
+                        on_log(line)
 
             if process.returncode == 0:
                 self._statuses[script_path] = "completed"

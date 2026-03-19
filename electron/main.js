@@ -98,7 +98,9 @@ async function createWindow() {
 }
 
 app.whenReady().then(async () => {
-  startBackend();
+  if (!isDev) {
+    startBackend();
+  }
   try {
     await waitForPort(BACKEND_PORT);
     console.log("Backend is ready.");

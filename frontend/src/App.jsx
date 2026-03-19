@@ -3,6 +3,8 @@ import TitleBar from "./components/TitleBar";
 import Sidebar from "./components/Sidebar";
 import ScriptList from "./components/ScriptList";
 import LogPanel from "./components/LogPanel";
+import FilesPanel from "./components/FilesPanel";
+import SettingsPanel from "./components/SettingsPanel";
 import StatusBar from "./components/StatusBar";
 import { fetchScripts, runScript, stopScript } from "./api";
 import { useWebSocket } from "./hooks/useWebSocket";
@@ -55,21 +57,27 @@ export default function App() {
       <TitleBar />
       <div className="app-body">
         <Sidebar activePage={activePage} onPageChange={setActivePage} />
-        <ScriptList
-          scripts={scripts}
-          statuses={statuses}
-          selectedScript={selectedScript}
-          onSelect={setSelectedScript}
-          onRefresh={loadScripts}
-        />
-        <LogPanel
-          scriptName={selectedScript}
-          logs={selectedScript ? logs[selectedScript] : []}
-          status={selectedScript ? statuses[selectedScript] : null}
-          onRun={handleRun}
-          onStop={handleStop}
-          onClearLogs={handleClearLogs}
-        />
+        {activePage === "scripts" && (
+          <>
+            <ScriptList
+              scripts={scripts}
+              statuses={statuses}
+              selectedScript={selectedScript}
+              onSelect={setSelectedScript}
+              onRefresh={loadScripts}
+            />
+            <LogPanel
+              scriptName={selectedScript}
+              logs={selectedScript ? logs[selectedScript] : []}
+              status={selectedScript ? statuses[selectedScript] : null}
+              onRun={handleRun}
+              onStop={handleStop}
+              onClearLogs={handleClearLogs}
+            />
+          </>
+        )}
+        {activePage === "files" && <FilesPanel scripts={scripts} />}
+        {activePage === "settings" && <SettingsPanel />}
       </div>
       <StatusBar
         connected={connected}
