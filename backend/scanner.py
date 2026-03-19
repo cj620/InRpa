@@ -16,6 +16,8 @@ def scan_scripts(directory: str) -> list[dict]:
             continue
         if filename.startswith("__"):
             continue
+        if filename == "config.py":
+            continue
 
         filepath = os.path.join(directory, filename)
         if not os.path.isfile(filepath):
