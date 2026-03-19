@@ -116,3 +116,62 @@ async def _extract_product_card(item, rank: int) -> dict | None:
         }
     except Exception:
         return None
+
+
+async def scrape_product_detail(page: Page, product: dict) -> dict | None:
+    """Open product detail page and extract additional info."""
+    if not product.get("product_url"):
+        return None
+
+    try:
+        await page.goto(product["product_url"], timeout=config.DETAIL_PAGE_TIMEOUT)
+        await page.wait_for_load_state("domcontentloaded")
+        await random_delay()
+
+        # Check for CAPTCHA
+        captcha = page.locator("form[action*='validateCaptcha']")
+        if await captcha.count() > 0:
+            print("WARNING: CAPTCHA detected, stopping detail extraction.")
+            return "CAPTCHA"
+
+        detail = {}
+
+        # Brand
+        brand_el = page.locator("#bylineInfo").first
+        if await brand_el.count() > 0:
+            detail["brand"] = (await brand_el.inner_text()).strip()
+        else:
+            detail["brand"] = None
+
+        # Description — feature bullets
+        bullets = page.locator("#feature-bullets ul li span.a-list-item")
+        if await bullets.count() > 0:
+            texts = []
+            for j in range(await bullets.count()):
+                text = await bullets.nth(j).inner_text()
+                text = text.strip()
+                if text:
+                    texts.append(text)
+            detail["description"] = " | ".join(texts) if texts else None
+        else:
+            detail["description"] = None
+
+        # Seller
+        seller_el = page.locator("#merchant-info, #sellerProfileTriggerId").first
+        if await seller_el.count() > 0:
+            detail["seller"] = (await seller_el.inner_text()).strip()
+        else:
+            detail["seller"] = None
+
+        # Availability
+        avail_el = page.locator("#availability span").first
+        if await avail_el.count() > 0:
+            detail["availability"] = (await avail_el.inner_text()).strip()
+        else:
+            detail["availability"] = None
+
+        return detail
+
+    except Exception as e:
+        print(f"  WARNING: Failed to scrape detail for rank {product['rank']}: {e}")
+        return None
