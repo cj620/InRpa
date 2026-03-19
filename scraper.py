@@ -175,3 +175,51 @@ async def scrape_product_detail(page: Page, product: dict) -> dict | None:
     except Exception as e:
         print(f"  WARNING: Failed to scrape detail for rank {product['rank']}: {e}")
         return None
+
+
+async def run_scraper(keyword: str, headless: bool = False):
+    """Main scraper orchestrator."""
+    print(f"Starting scraper for keyword: '{keyword}'")
+    print(f"Mode: {'headless' if headless else 'headed'}")
+
+    pw, browser, page = await create_browser(headless=headless)
+
+    try:
+        # Search
+        print(f"Searching Amazon for '{keyword}'...")
+        await search_amazon(page, keyword)
+
+        # Parse search results
+        print("Parsing search results...")
+        products = await parse_search_results(page, config.MAX_PRODUCTS)
+        print(f"Found {len(products)} products.")
+
+        # Scrape detail pages
+        for product in products:
+            print(f"  Scraping detail for rank {product['rank']}: {product['title'][:50]}...")
+            detail = await scrape_product_detail(page, product)
+            if detail == "CAPTCHA":
+                print("CAPTCHA encountered. Saving scraped data and stopping.")
+                break
+            product["detail"] = detail
+            await random_delay()
+
+        # Save results
+        result = {
+            "keyword": keyword,
+            "scraped_at": datetime.now().isoformat(timespec="seconds"),
+            "products": products,
+        }
+
+        os.makedirs("output", exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"output/{keyword}_{timestamp}.json"
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(result, f, ensure_ascii=False, indent=2)
+
+        print(f"Results saved to {filename}")
+        return result
+
+    finally:
+        await browser.close()
+        await pw.stop()
