@@ -12,6 +12,10 @@ from fastapi.responses import JSONResponse
 from backend.scanner import scan_scripts
 from backend.runner import ScriptRunner
 from backend.settings import load_settings, save_settings
+from backend.drafts import (
+    read_script_content, read_draft, save_draft,
+    delete_draft, publish_draft,
+)
 
 SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "scripts")
 
@@ -98,6 +102,42 @@ async def get_settings():
 async def update_settings(body: dict):
     """Update settings (partial merge)."""
     return save_settings(body)
+
+
+@app.get("/api/scripts/{name}/content")
+async def get_script_content(name: str):
+    content = read_script_content(SCRIPTS_DIR, name)
+    if content is None:
+        return JSONResponse(status_code=404, content={"error": f"Script '{name}' not found"})
+    return {"content": content}
+
+
+@app.get("/api/scripts/{name}/draft")
+async def get_draft(name: str):
+    content = read_draft(SCRIPTS_DIR, name)
+    if content is None:
+        return JSONResponse(status_code=404, content={"error": "No draft found"})
+    return {"content": content}
+
+
+@app.put("/api/scripts/{name}/draft")
+async def save_draft_endpoint(name: str, body: dict):
+    save_draft(SCRIPTS_DIR, name, body["content"])
+    return {"message": "Draft saved"}
+
+
+@app.delete("/api/scripts/{name}/draft")
+async def delete_draft_endpoint(name: str):
+    if delete_draft(SCRIPTS_DIR, name):
+        return {"message": "Draft deleted"}
+    return JSONResponse(status_code=404, content={"error": "No draft found"})
+
+
+@app.post("/api/scripts/{name}/draft/publish")
+async def publish_draft_endpoint(name: str):
+    if publish_draft(SCRIPTS_DIR, name):
+        return {"message": f"Draft published for '{name}'"}
+    return JSONResponse(status_code=404, content={"error": "No draft to publish"})
 
 
 @app.websocket("/ws")

@@ -3,6 +3,8 @@
 import os
 from datetime import datetime
 
+from backend.drafts import has_draft as check_has_draft
+
 
 def scan_scripts(directory: str) -> list[dict]:
     """Scan directory for .py files and return metadata list."""
@@ -29,6 +31,7 @@ def scan_scripts(directory: str) -> list[dict]:
             "path": filepath,
             "size": stat.st_size,
             "modified_at": datetime.fromtimestamp(stat.st_mtime).isoformat(timespec="seconds"),
+            "has_draft": check_has_draft(directory, filename[:-3]),
         })
 
     return scripts
