@@ -348,6 +348,18 @@
   flex-shrink: 0;
 }
 
+.script-card-official-badge {
+  display: inline-flex;
+  padding: 1px 6px;
+  background: rgba(46, 204, 113, 0.08);
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #2ecc71;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .script-card-status.status-draft {
   color: var(--accent);
 }

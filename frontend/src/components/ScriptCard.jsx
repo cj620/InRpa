@@ -132,11 +132,11 @@ export default function ScriptCard({
               <span className="script-card-draft-dot" />
               草稿
             </span>
-          ) : script.has_draft ? (
-            <span className="script-card-has-draft-badge" title="有草稿">
-              有草稿
+          ) : (
+            <span className="script-card-official-badge" title="正式版本">
+              正式
             </span>
-          ) : null}
+          )}
         </div>
         {hasDescription && (
           <div className="script-card-description" title={script.description}>
