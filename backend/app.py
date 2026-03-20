@@ -8,10 +8,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sse_starlette.sse import EventSourceResponse
 
 from backend.scanner import scan_scripts
 from backend.runner import ScriptRunner
 from backend.settings import load_settings, save_settings
+from backend.ai_chat import stream_chat
 from backend.drafts import (
     read_script_content, read_draft, save_draft,
     delete_draft, publish_draft,
@@ -173,6 +175,20 @@ async def publish_draft_endpoint(name: str):
     if publish_draft(SCRIPTS_DIR, name):
         return {"message": f"Draft published for '{name}'"}
     return JSONResponse(status_code=404, content={"error": "No draft to publish"})
+
+
+@app.post("/api/ai/chat")
+async def ai_chat(body: dict):
+    """AI chat endpoint — streams response via SSE."""
+    settings = load_settings()
+    api_key = settings.get("ai", {}).get("api_key", "")
+    if not api_key:
+        return JSONResponse(status_code=400, content={"error": "AI API key not configured"})
+
+    code = body.get("code", "")
+    message = body.get("message", "")
+    history = body.get("history", [])
+    return EventSourceResponse(stream_chat(code, message, history))
 
 
 @app.websocket("/ws")
