@@ -1,0 +1,141 @@
+.side-panel {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border-left: 1px solid var(--border);
+  background: var(--bg-primary);
+  transition: width 300ms ease-out;
+  flex-shrink: 0;
+}
+
+.side-panel:not(.side-panel-open) {
+  border-left: none;
+}
+
+.side-panel-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 280px;
+  overflow: hidden;
+}
+
+/* ── Drag handle ── */
+.side-panel-drag-handle {
+  position: absolute;
+  left: -2px;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+  transition: background 0.2s;
+}
+
+.side-panel-drag-handle:hover,
+.side-panel-drag-handle:active {
+  background: var(--accent);
+  opacity: 0.5;
+}
+
+/* ── Header ── */
+.side-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 0 0;
+  height: 40px;
+  min-height: 40px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card);
+}
+
+/* ── Tabs ── */
+.side-panel-tabs {
+  display: flex;
+  align-items: center;
+  position: relative;
+  height: 100%;
+  padding: 0 4px;
+  gap: 0;
+}
+
+.side-panel-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 12px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+
+.side-panel-tab:hover {
+  color: var(--text-primary);
+}
+
+.side-panel-tab.active {
+  color: var(--text-primary);
+}
+
+.side-panel-tab svg {
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.side-panel-tab.active svg {
+  opacity: 1;
+}
+
+/* ── Animated tab indicator ── */
+.side-panel-tab-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px 1px 0 0;
+  transition: transform 200ms ease, width 200ms ease;
+  pointer-events: none;
+}
+
+/* ── Close button ── */
+.side-panel-close {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.side-panel-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.side-panel-close:active {
+  transform: scale(0.92);
+}
+
+/* ── Body ── */
+.side-panel-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}

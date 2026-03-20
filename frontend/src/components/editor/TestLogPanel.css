@@ -1,0 +1,130 @@
+.test-log-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+.test-log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.test-log-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.test-log-status-idle {
+  color: var(--text-secondary);
+}
+
+.test-log-status-running {
+  color: var(--status-running);
+}
+
+.test-log-status-completed {
+  color: var(--status-success);
+}
+
+.test-log-status-failed {
+  color: var(--status-fail);
+}
+
+.test-log-count {
+  font-size: 10px;
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+/* ── Spinner ── */
+.test-log-spinner {
+  width: 10px;
+  height: 10px;
+  border: 2px solid rgba(255, 192, 72, 0.25);
+  border-top-color: var(--status-running);
+  border-radius: 50%;
+  animation: spinLog 0.8s linear infinite;
+}
+
+@keyframes spinLog {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Body ── */
+.test-log-body {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--bg-terminal);
+  padding: 8px 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* ── Empty state ── */
+.test-log-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex: 1;
+  min-height: 200px;
+  color: var(--text-secondary);
+  opacity: 0.45;
+}
+
+.test-log-empty span {
+  font-family: var(--font-ui);
+  font-size: 12px;
+}
+
+/* ── Log lines ── */
+.test-log-line {
+  display: flex;
+  gap: 8px;
+  padding: 1px 12px;
+  transition: background 0.1s;
+}
+
+.test-log-line:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.test-log-time {
+  color: var(--text-secondary);
+  opacity: 0.5;
+  flex-shrink: 0;
+  font-size: 11px;
+}
+
+.test-log-text {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* ── Level colors ── */
+.test-log-info .test-log-text {
+  color: var(--text-primary);
+}
+
+.test-log-warn .test-log-text {
+  color: var(--status-running);
+}
+
+.test-log-error .test-log-text {
+  color: var(--status-fail);
+}
+
+.test-log-warning .test-log-text {
+  color: var(--status-running);
+}

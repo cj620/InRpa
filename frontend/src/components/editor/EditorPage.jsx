@@ -1,15 +1,22 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 import { useEditor } from "../../hooks/useEditor";
 import { useDraftRunner } from "../../hooks/useDraftRunner";
+import { useAIChat } from "../../hooks/useAIChat";
 import EditorToolbar from "./EditorToolbar";
 import EditorMain from "./EditorMain";
 import EditorActionBar from "./EditorActionBar";
 import EmptyState from "./EmptyState";
+import SidePanel from "./SidePanel";
+import AIChatPanel from "./AIChatPanel";
+import TestLogPanel from "./TestLogPanel";
 import "./EditorPage.css";
 
 export default function EditorPage({ scripts, logs, statuses }) {
   const editor = useEditor();
   const draftRunner = useDraftRunner(editor.selectedScript, logs, statuses);
+  const aiChat = useAIChat();
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("ai");
 
   const handleSelectScript = (name) => {
     editor.loadScript(name);
@@ -27,6 +34,18 @@ export default function EditorPage({ scripts, logs, statuses }) {
     }
   };
 
+  const handleSendMessage = useCallback((text) => {
+    aiChat.sendMessage(editor.draftCode, text);
+  }, [aiChat, editor.draftCode]);
+
+  const handleApplyCode = useCallback((code) => {
+    editor.updateCode(code);
+  }, [editor]);
+
+  const handleTogglePanel = useCallback(() => {
+    setPanelOpen((prev) => !prev);
+  }, []);
+
   return (
     <div className="editor-page">
       <EditorToolbar
@@ -40,6 +59,8 @@ export default function EditorPage({ scripts, logs, statuses }) {
         draftStatus={draftRunner.status}
         onRunTest={draftRunner.runTest}
         onStopTest={draftRunner.stopTest}
+        panelOpen={panelOpen}
+        onTogglePanel={handleTogglePanel}
       />
       <div className="editor-page-content">
         <div className="editor-page-main">
@@ -55,7 +76,27 @@ export default function EditorPage({ scripts, logs, statuses }) {
             <EmptyState scripts={scripts} onSelectScript={handleSelectScript} />
           )}
         </div>
-        {/* Side panel placeholder — Task 13 */}
+        <SidePanel
+          isOpen={panelOpen}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          onToggle={handleTogglePanel}
+        >
+          {activeTab === "ai" ? (
+            <AIChatPanel
+              messages={aiChat.messages}
+              isStreaming={aiChat.isStreaming}
+              error={aiChat.error}
+              onSendMessage={handleSendMessage}
+              onApplyCode={handleApplyCode}
+            />
+          ) : (
+            <TestLogPanel
+              status={draftRunner.status}
+              logs={draftRunner.logs}
+            />
+          )}
+        </SidePanel>
       </div>
       {editor.selectedScript && (
         <EditorActionBar
