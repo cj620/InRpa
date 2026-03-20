@@ -70,3 +70,13 @@ async def test_publish_draft(setup_test_script):
 
         resp = await client.get("/api/scripts/example/draft")
         assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_run_draft(setup_test_script):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.put("/api/scripts/example/draft", json={"content": "print('testing draft')\n"})
+        resp = await client.post("/api/scripts/example/draft/run")
+        assert resp.status_code == 200
+        assert "started" in resp.json()["message"]

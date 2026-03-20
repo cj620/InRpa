@@ -133,6 +133,41 @@ async def delete_draft_endpoint(name: str):
     return JSONResponse(status_code=404, content={"error": "No draft found"})
 
 
+@app.post("/api/scripts/{name}/draft/run")
+async def run_draft(name: str):
+    """Run the draft version of a script."""
+    draft_content = read_draft(SCRIPTS_DIR, name)
+    if draft_content is None:
+        return JSONResponse(status_code=404, content={"error": "No draft found"})
+
+    drafts_dir = os.path.join(SCRIPTS_DIR, ".drafts")
+    draft_path = os.path.join(drafts_dir, f"{name}.py")
+
+    if runner.get_status(draft_path) == "running":
+        return JSONResponse(status_code=409, content={"error": "Draft is already running"})
+
+    async def on_log(line: str):
+        await broadcast({"type": "log", "script": name, "source": "draft", "data": line})
+
+    async def run_and_notify():
+        await broadcast({"type": "status", "script": name, "source": "draft", "data": "running"})
+        await runner.run(draft_path, on_log=on_log)
+        status = runner.get_status(draft_path)
+        await broadcast({"type": "status", "script": name, "source": "draft", "data": status})
+
+    asyncio.create_task(run_and_notify())
+    return {"message": f"Draft '{name}' started"}
+
+
+@app.post("/api/scripts/{name}/draft/stop")
+async def stop_draft(name: str):
+    """Stop a running draft test."""
+    draft_path = os.path.join(SCRIPTS_DIR, ".drafts", f"{name}.py")
+    if runner.stop(draft_path):
+        return {"message": f"Draft '{name}' stopped"}
+    return JSONResponse(status_code=400, content={"error": "Draft is not running"})
+
+
 @app.post("/api/scripts/{name}/draft/publish")
 async def publish_draft_endpoint(name: str):
     if publish_draft(SCRIPTS_DIR, name):
