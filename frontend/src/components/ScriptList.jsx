@@ -13,14 +13,11 @@ export default function ScriptList({
   onEdit,
   onTagClick,
   onScriptAction,
-  onBatchAction,
   onDragStart,
 }) {
   const [search, setSearch] = useState("");
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
-  const [batchMode, setBatchMode] = useState(false);
-  const [batchSelected, setBatchSelected] = useState(new Set()); // set of script paths
   const tagDropdownRef = useRef(null);
   const tagBtnRef = useRef(null);
 
@@ -40,12 +37,6 @@ export default function ScriptList({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [tagDropdownOpen]);
-
-  // Exit batch mode and clear selection when folder changes
-  useEffect(() => {
-    setBatchMode(false);
-    setBatchSelected(new Set());
-  }, [selectedFolder]);
 
   const handleTagToggle = (tag) => {
     setSelectedTags((prev) =>
@@ -98,36 +89,6 @@ export default function ScriptList({
     [groups]
   );
   const totalVisible = visibleScripts.length;
-
-  // Batch helpers
-  const allVisibleSelected = totalVisible > 0 && visibleScripts.every((s) => batchSelected.has(s.path));
-
-  const handleSelectAll = () => {
-    if (allVisibleSelected) {
-      setBatchSelected(new Set());
-    } else {
-      setBatchSelected(new Set(visibleScripts.map((s) => s.path)));
-    }
-  };
-
-  const handleSelectToggle = (script) => {
-    setBatchSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(script.path)) next.delete(script.path);
-      else next.add(script.path);
-      return next;
-    });
-  };
-
-  const handleBatchMove = () => {
-    const scripts = visibleScripts.filter((s) => batchSelected.has(s.path));
-    onBatchAction?.("move", scripts);
-  };
-
-  const exitBatchMode = () => {
-    setBatchMode(false);
-    setBatchSelected(new Set());
-  };
 
   const totalScripts = folders.reduce((n, f) => n + (f.scripts?.length || 0), 0);
 
@@ -186,19 +147,6 @@ export default function ScriptList({
             </div>
           )}
         </div>
-        {/* Batch mode toggle */}
-        <button
-          className={`script-list-batch-btn${batchMode ? " active" : ""}`}
-          onClick={() => batchMode ? exitBatchMode() : setBatchMode(true)}
-          title={batchMode ? "退出多选" : "多选模式"}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="5" width="4" height="4" rx="1" />
-            <rect x="3" y="13" width="4" height="4" rx="1" />
-            <line x1="11" y1="7" x2="21" y2="7" />
-            <line x1="11" y1="15" x2="21" y2="15" />
-          </svg>
-        </button>
         <button className="script-list-refresh" onClick={onRefresh} title="刷新">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
@@ -206,32 +154,6 @@ export default function ScriptList({
           </svg>
         </button>
       </div>
-
-      {/* Batch action bar */}
-      {batchMode && (
-        <div className="script-list-batch-bar">
-          <label className="script-list-batch-select-all">
-            <input
-              type="checkbox"
-              checked={allVisibleSelected}
-              onChange={handleSelectAll}
-            />
-            <span>{batchSelected.size > 0 ? `已选 ${batchSelected.size} 个` : "全选"}</span>
-          </label>
-          <div className="script-list-batch-actions">
-            <button
-              className="script-list-batch-action"
-              onClick={handleBatchMove}
-              disabled={batchSelected.size === 0}
-            >
-              移动到...
-            </button>
-            <button className="script-list-batch-cancel" onClick={exitBatchMode}>
-              取消
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="script-list-items">
         {/* Empty state: no scripts at all */}
@@ -270,7 +192,7 @@ export default function ScriptList({
                     key={isSearchActive ? `${script.folder || ""}/${script.path}` : script.path}
                     script={script}
                     status={statuses[script.name]}
-                    selected={!batchMode && selectedScript === script.name}
+                    selected={selectedScript === script.name}
                     onClick={() => {
                       if (script.is_draft) {
                         onEdit?.(script.parent_name);
@@ -281,11 +203,8 @@ export default function ScriptList({
                     onEdit={onEdit}
                     onTagClick={onTagClick}
                     onContextMenu={onScriptAction}
-                    draggable={!batchMode}
+                    draggable={true}
                     onDragStart={() => onDragStart?.(script)}
-                    selectable={batchMode && !script.is_draft}
-                    isSelected={batchSelected.has(script.path)}
-                    onSelectToggle={() => handleSelectToggle(script)}
                   />
                 ))
               )}

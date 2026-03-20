@@ -278,7 +278,6 @@ export default function App() {
               onEdit={handleEditScript}
               onTagClick={(tag) => {/* ScriptList handles tag filter internally */}}
               onScriptAction={handleScriptAction}
-              onBatchAction={handleBatchAction}
               onDragStart={handleDragStart}
             />
             <LogPanel

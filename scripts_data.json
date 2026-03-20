@@ -8,6 +8,11 @@
   "scripts": {
     "scraper": {
       "folder": "test"
+    },
+    "scraper_draft": {
+      "tags": [
+        "a m z"
+      ]
     }
   }
 }

@@ -12,10 +12,13 @@
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-shrink: 0;
+  min-width: 0;
 }
 
 .script-list-search {
   flex: 1;
+  min-width: 0;
   height: 32px;
   padding: 0 10px;
   background: var(--bg-card);
@@ -253,6 +256,8 @@
   border: none;
   background: var(--bg-card);
   color: var(--text-secondary);
+  position: relative;
+  z-index: 201;
   border-radius: 6px;
   cursor: pointer;
   display: flex;
