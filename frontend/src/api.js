@@ -6,6 +6,61 @@ export async function fetchScripts() {
   return res.json();
 }
 
+export async function fetchFolders() {
+  const res = await fetch(`${API_BASE}/api/folders`);
+  if (!res.ok) throw new Error(`Failed to fetch folders: ${res.status}`);
+  return res.json();
+}
+
+export async function createFolder(name, icon = "📁") {
+  const res = await fetch(`${API_BASE}/api/folders`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, icon }),
+  });
+  if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Failed to create folder"); }
+  return res.json();
+}
+
+export async function renameFolder(name, newName) {
+  const res = await fetch(`${API_BASE}/api/folders/${encodeURIComponent(name)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: newName }),
+  });
+  if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Failed to rename folder"); }
+  return res.json();
+}
+
+export async function deleteFolder(name) {
+  const res = await fetch(`${API_BASE}/api/folders/${encodeURIComponent(name)}`, { method: "DELETE" });
+  if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Failed to delete folder"); }
+  return res.json();
+}
+
+export async function moveScriptToFolder(scriptName, folderName) {
+  const res = await fetch(`${API_BASE}/api/scripts/${encodeURIComponent(scriptName)}/folder`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ folder: folderName }),
+  });
+  if (!res.ok) throw new Error(`Failed to move script: ${res.status}`);
+  return res.json();
+}
+
+export async function updateScriptMeta(name, { tags, description } = {}) {
+  const body = {};
+  if (tags !== undefined) body.tags = tags;
+  if (description !== undefined) body.description = description;
+  const res = await fetch(`${API_BASE}/api/scripts/${encodeURIComponent(name)}/meta`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`Failed to update script meta: ${res.status}`);
+  return res.json();
+}
+
 export async function runScript(name) {
   const res = await fetch(`${API_BASE}/api/scripts/${name}/run`, {
     method: "POST",

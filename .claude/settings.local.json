@@ -11,7 +11,8 @@
       "Bash(python -m pytest tests/test_settings.py -v)",
       "Bash(find /c/Users/Administrator/Desktop/AI/rpa-mpv/scripts -type f -name *.py)",
       "Bash(find /c/Users/Administrator/Desktop/AI/rpa-mpv/tests -type f -name *.py)",
-      "WebFetch(domain:minimax-algeng-chat-tts.oss-cn-wulanchabu.aliyuncs.com)"
+      "WebFetch(domain:minimax-algeng-chat-tts.oss-cn-wulanchabu.aliyuncs.com)",
+      "Bash(git check-ignore:*)"
     ]
   }
 }

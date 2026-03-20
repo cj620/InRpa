@@ -2,28 +2,67 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import TitleBar from "./components/TitleBar";
 import Sidebar from "./components/Sidebar";
 import ScriptList from "./components/ScriptList";
+import FolderTree from "./components/FolderTree";
 import LogPanel from "./components/LogPanel";
 import FilesPanel from "./components/FilesPanel";
 import SettingsPanel from "./components/SettingsPanel";
 import EditorPage from "./components/editor/EditorPage";
 import StatusBar from "./components/StatusBar";
 import { ToastContainer } from "./components/Toast";
-import { fetchScripts, runScript, stopScript, fetchSettings, updateSettings } from "./api";
+import MoveToDialog from "./components/MoveToDialog";
+import EditTagsDialog from "./components/EditTagsDialog";
+import MarketPage from "./components/MarketPage";
+import {
+  fetchFolders,
+  fetchScripts,
+  runScript, stopScript,
+  fetchSettings, updateSettings,
+  createFolder, renameFolder, deleteFolder,
+  moveScriptToFolder, updateScriptMeta,
+} from "./api";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import "./App.css";
 
 export default function App() {
-  const [scripts, setScripts] = useState([]);
-  const [selectedScript, setSelectedScript] = useState(null);
+  // ── Folder + script data ────────────────────────────────
+  const [folders, setFolders] = useState([]);          // [{name, icon, scripts:[]}]
+  const [allScripts, setAllScripts] = useState([]);    // flat list for editor/files
+  const [selectedFolder, setSelectedFolder] = useState("all");
+  const [folderTreeCollapsed, setFolderTreeCollapsed] = useState(false);
+
+  // ── Selection & navigation ──────────────────────────────
+  const [selectedScript, setSelectedScript] = useState(null); // script.name
   const [activePage, setActivePage] = useState("scripts");
-  const [theme, setTheme] = useState("dark");
-  const { connected, logs, statuses, clearLogs } = useWebSocket();
-  // Track which pages have been visited so we mount them once and keep them alive
   const [mountedPages, setMountedPages] = useState({ scripts: true });
   const editorOpenScriptRef = useRef(null);
 
-  // Apply theme to DOM whenever it changes
+  // ── Theme ───────────────────────────────────────────────
+  const [theme, setTheme] = useState("dark");
+
+  // ── Dialogs ─────────────────────────────────────────────
+  const [moveDialog, setMoveDialog] = useState(null);   // { scripts: [script] }
+  const [tagsDialog, setTagsDialog] = useState(null);   // { script }
+  const [descDialog, setDescDialog] = useState(null);   // { script }
+
+  // ── Drag state ──────────────────────────────────────────
+  const [draggingScript, setDraggingScript] = useState(null);
+
+  // ── WebSocket ───────────────────────────────────────────
+  const { connected, logs, statuses, clearLogs } = useWebSocket();
+
+  // ── Derived: all unique tags ────────────────────────────
+  const allTags = React.useMemo(() => {
+    const tagSet = new Set();
+    for (const folder of folders) {
+      for (const s of folder.scripts || []) {
+        if (Array.isArray(s.tags)) s.tags.forEach((t) => tagSet.add(t));
+      }
+    }
+    return Array.from(tagSet).sort();
+  }, [folders]);
+
+  // ── Theme ───────────────────────────────────────────────
   useEffect(() => {
     if (theme === "dark") {
       delete document.documentElement.dataset.theme;
@@ -32,7 +71,6 @@ export default function App() {
     }
   }, [theme]);
 
-  // Load theme from backend on mount
   useEffect(() => {
     fetchSettings().then((data) => {
       if (data?.theme) setTheme(data.theme);
@@ -46,31 +84,42 @@ export default function App() {
     );
   }, []);
 
-  // Ensure a page gets mounted when navigated to (and stays mounted)
+  // ── Page navigation ─────────────────────────────────────
   const handlePageChange = useCallback((page) => {
     setActivePage(page);
     setMountedPages((prev) => (prev[page] ? prev : { ...prev, [page]: true }));
   }, []);
 
-  // Navigate to editor with a specific script pre-selected
   const handleEditScript = useCallback((scriptName) => {
     editorOpenScriptRef.current = scriptName;
     handlePageChange("editor");
   }, [handlePageChange]);
 
+  // ── Data loading ────────────────────────────────────────
+  const loadFolders = useCallback(async () => {
+    try {
+      const data = await fetchFolders();
+      setFolders(data);
+    } catch (err) {
+      console.error("Failed to fetch folders:", err);
+    }
+  }, []);
+
   const loadScripts = useCallback(async () => {
     try {
       const data = await fetchScripts();
-      setScripts(data);
+      setAllScripts(data);
     } catch (err) {
       console.error("Failed to fetch scripts:", err);
     }
   }, []);
 
   useEffect(() => {
+    loadFolders();
     loadScripts();
-  }, [loadScripts]);
+  }, [loadFolders, loadScripts]);
 
+  // ── Run / Stop ──────────────────────────────────────────
   const handleRun = async () => {
     if (!selectedScript) return;
     try {
@@ -94,63 +143,235 @@ export default function App() {
     if (selectedScript) clearLogs(selectedScript);
   };
 
+  // ── Folder CRUD ─────────────────────────────────────────
+  const handleCreateFolder = useCallback(async (name) => {
+    try {
+      await createFolder(name);
+      await loadFolders();
+    } catch (err) {
+      console.error("Failed to create folder:", err);
+    }
+  }, [loadFolders]);
+
+  const handleRenameFolder = useCallback(async (oldName, newName) => {
+    try {
+      await renameFolder(oldName, newName);
+      if (selectedFolder === oldName) setSelectedFolder(newName);
+      await loadFolders();
+    } catch (err) {
+      console.error("Failed to rename folder:", err);
+    }
+  }, [loadFolders, selectedFolder]);
+
+  const handleDeleteFolder = useCallback(async (name) => {
+    try {
+      await deleteFolder(name);
+      if (selectedFolder === name) setSelectedFolder("all");
+      await loadFolders();
+    } catch (err) {
+      console.error("Failed to delete folder:", err);
+    }
+  }, [loadFolders, selectedFolder]);
+
+  // ── Script actions (from context menu) ──────────────────
+  const handleScriptAction = useCallback((action, script) => {
+    if (action === "move") {
+      setMoveDialog({ scripts: [script] });
+    } else if (action === "editTags") {
+      setTagsDialog({ script });
+    } else if (action === "editDescription") {
+      setDescDialog({ script });
+    }
+  }, []);
+
+  // ── Batch action ─────────────────────────────────────────
+  const handleBatchAction = useCallback((action, scripts) => {
+    if (action === "move") {
+      setMoveDialog({ scripts });
+    }
+  }, []);
+
+  // ── Move dialog confirm ──────────────────────────────────
+  const handleMoveConfirm = useCallback(async (targetFolder) => {
+    if (!moveDialog) return;
+    try {
+      await Promise.all(
+        moveDialog.scripts.map((s) =>
+          moveScriptToFolder(s.name, targetFolder === "_unsorted" ? null : targetFolder)
+        )
+      );
+      await loadFolders();
+    } catch (err) {
+      console.error("Failed to move scripts:", err);
+    }
+    setMoveDialog(null);
+  }, [moveDialog, loadFolders]);
+
+  // ── Tags dialog confirm ──────────────────────────────────
+  const handleTagsSave = useCallback(async (script, tags) => {
+    try {
+      await updateScriptMeta(script.name, { tags });
+      await loadFolders();
+      await loadScripts();
+    } catch (err) {
+      console.error("Failed to update tags:", err);
+    }
+    setTagsDialog(null);
+  }, [loadFolders, loadScripts]);
+
+  // ── Description dialog confirm ───────────────────────────
+  const handleDescSave = useCallback(async (script, description) => {
+    try {
+      await updateScriptMeta(script.name, { description });
+      await loadFolders();
+      await loadScripts();
+    } catch (err) {
+      console.error("Failed to update description:", err);
+    }
+    setDescDialog(null);
+  }, [loadFolders, loadScripts]);
+
+  // ── Drag & drop ──────────────────────────────────────────
+  const handleDragStart = useCallback((script) => {
+    setDraggingScript(script);
+  }, []);
+
+  const handleFolderDrop = useCallback(async (folderName) => {
+    if (!draggingScript) return;
+    try {
+      await moveScriptToFolder(
+        draggingScript.name,
+        folderName === "_unsorted" ? null : folderName
+      );
+      await loadFolders();
+    } catch (err) {
+      console.error("Failed to move script:", err);
+    }
+    setDraggingScript(null);
+  }, [draggingScript, loadFolders]);
+
   return (
     <SettingsProvider>
-    <div className="app">
-      <ToastContainer />
-      <TitleBar />
-      <div className="app-body">
-        <Sidebar activePage={activePage} onPageChange={handlePageChange} theme={theme} onThemeChange={handleThemeChange} />
-        {/* Scripts page — always mounted */}
-        <div className="app-page" style={{ display: activePage === "scripts" ? "contents" : "none" }}>
-          <ScriptList
-            scripts={scripts}
-            statuses={statuses}
-            selectedScript={selectedScript}
-            onSelect={setSelectedScript}
-            onRefresh={loadScripts}
-            onEdit={handleEditScript}
+      <div className="app">
+        <ToastContainer />
+        <TitleBar />
+        <div className="app-body">
+          <Sidebar
+            activePage={activePage}
+            onPageChange={handlePageChange}
+            theme={theme}
+            onThemeChange={handleThemeChange}
           />
-          <LogPanel
-            scriptName={selectedScript}
-            logs={selectedScript ? logs[selectedScript] : []}
-            status={selectedScript ? statuses[selectedScript] : null}
-            onRun={handleRun}
-            onStop={handleStop}
-            onClearLogs={handleClearLogs}
-          />
-        </div>
-        {/* Files page */}
-        {mountedPages.files && (
-          <div className="app-page" style={{ display: activePage === "files" ? "contents" : "none" }}>
-            <FilesPanel scripts={scripts} onEdit={handleEditScript} />
-          </div>
-        )}
-        {/* Editor page — stays mounted once visited, preserves state */}
-        {mountedPages.editor && (
-          <div className="app-page" style={{ display: activePage === "editor" ? "contents" : "none" }}>
-            <EditorPage
-              scripts={scripts}
-              logs={logs}
+
+          {/* Scripts page: FolderTree | ScriptList | LogPanel */}
+          <div className="app-page" style={{ display: activePage === "scripts" ? "contents" : "none" }}>
+            <FolderTree
+              folders={folders}
+              selectedFolder={selectedFolder}
+              onSelectFolder={setSelectedFolder}
+              onCreateFolder={handleCreateFolder}
+              onRenameFolder={handleRenameFolder}
+              onDeleteFolder={handleDeleteFolder}
+              collapsed={folderTreeCollapsed}
+              onToggleCollapse={() => setFolderTreeCollapsed((v) => !v)}
+              draggingScript={draggingScript}
+              onFolderDrop={handleFolderDrop}
+            />
+            <ScriptList
+              folders={folders}
+              tags={allTags}
+              selectedFolder={selectedFolder}
               statuses={statuses}
-              openScriptRef={editorOpenScriptRef}
+              selectedScript={selectedScript}
+              onSelect={setSelectedScript}
+              onRefresh={loadFolders}
+              onEdit={handleEditScript}
+              onTagClick={(tag) => {/* ScriptList handles tag filter internally */}}
+              onScriptAction={handleScriptAction}
+              onBatchAction={handleBatchAction}
+              onDragStart={handleDragStart}
+            />
+            <LogPanel
+              scriptName={selectedScript}
+              logs={selectedScript ? logs[selectedScript] : []}
+              status={selectedScript ? statuses[selectedScript] : null}
+              onRun={handleRun}
+              onStop={handleStop}
+              onClearLogs={handleClearLogs}
             />
           </div>
+
+          {/* Files page */}
+          {mountedPages.files && (
+            <div className="app-page" style={{ display: activePage === "files" ? "contents" : "none" }}>
+              <FilesPanel scripts={allScripts} onEdit={handleEditScript} />
+            </div>
+          )}
+
+          {/* Editor page */}
+          {mountedPages.editor && (
+            <div className="app-page" style={{ display: activePage === "editor" ? "contents" : "none" }}>
+              <EditorPage
+                scripts={allScripts}
+                logs={logs}
+                statuses={statuses}
+                openScriptRef={editorOpenScriptRef}
+              />
+            </div>
+          )}
+
+          {/* Market page */}
+          {mountedPages.market && (
+            <div className="app-page" style={{ display: activePage === "market" ? "flex" : "none", flex: 1, overflow: "hidden" }}>
+              <MarketPage />
+            </div>
+          )}
+
+          {/* Settings page */}
+          {mountedPages.settings && (
+            <div className="app-page" style={{ display: activePage === "settings" ? "contents" : "none" }}>
+              <SettingsPanel theme={theme} onThemeChange={handleThemeChange} />
+            </div>
+          )}
+        </div>
+
+        <StatusBar
+          connected={connected}
+          scripts={allScripts}
+          statuses={statuses}
+          onNavigate={handlePageChange}
+        />
+
+        {/* Move-to-folder dialog */}
+        {moveDialog && (
+          <MoveToDialog
+            folders={folders}
+            scriptCount={moveDialog.scripts.length}
+            onConfirm={handleMoveConfirm}
+            onCancel={() => setMoveDialog(null)}
+          />
         )}
-        {/* Settings page */}
-        {mountedPages.settings && (
-          <div className="app-page" style={{ display: activePage === "settings" ? "contents" : "none" }}>
-            <SettingsPanel theme={theme} onThemeChange={handleThemeChange} />
-          </div>
+
+        {/* Edit tags dialog */}
+        {tagsDialog && (
+          <EditTagsDialog
+            script={tagsDialog.script}
+            allTags={allTags}
+            onSave={(tags) => handleTagsSave(tagsDialog.script, tags)}
+            onCancel={() => setTagsDialog(null)}
+          />
+        )}
+
+        {/* Edit description (inline via tagsDialog reuse) */}
+        {descDialog && (
+          <EditTagsDialog
+            script={descDialog.script}
+            mode="description"
+            onSave={(desc) => handleDescSave(descDialog.script, desc)}
+            onCancel={() => setDescDialog(null)}
+          />
         )}
       </div>
-      <StatusBar
-        connected={connected}
-        scripts={scripts}
-        statuses={statuses}
-        onNavigate={handlePageChange}
-      />
-    </div>
     </SettingsProvider>
   );
 }

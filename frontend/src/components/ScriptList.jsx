@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo } from "react";
+import React, { useRef, useEffect, useMemo, useState } from "react";
 import ScriptCard from "./ScriptCard";
 import "./ScriptList.css";
 
@@ -13,10 +13,14 @@ export default function ScriptList({
   onEdit,
   onTagClick,
   onScriptAction,
+  onBatchAction,
+  onDragStart,
 }) {
-  const [search, setSearch] = React.useState("");
-  const [selectedTags, setSelectedTags] = React.useState([]);
-  const [tagDropdownOpen, setTagDropdownOpen] = React.useState(false);
+  const [search, setSearch] = useState("");
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
+  const [batchMode, setBatchMode] = useState(false);
+  const [batchSelected, setBatchSelected] = useState(new Set()); // set of script paths
   const tagDropdownRef = useRef(null);
   const tagBtnRef = useRef(null);
 
@@ -37,27 +41,26 @@ export default function ScriptList({
     return () => document.removeEventListener("mousedown", handler);
   }, [tagDropdownOpen]);
 
+  // Exit batch mode and clear selection when folder changes
+  useEffect(() => {
+    setBatchMode(false);
+    setBatchSelected(new Set());
+  }, [selectedFolder]);
+
   const handleTagToggle = (tag) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   };
 
-  const clearTagFilter = () => {
-    setSelectedTags([]);
-  };
+  const clearTagFilter = () => setSelectedTags([]);
 
-  // Filter a script by search term and selected tags
   const matchesFilters = (script) => {
     const term = search.toLowerCase().trim();
     if (term) {
       const nameMatch = script.name.toLowerCase().includes(term);
-      const descMatch =
-        script.description &&
-        script.description.toLowerCase().includes(term);
-      const tagMatch =
-        Array.isArray(script.tags) &&
-        script.tags.some((t) => t.toLowerCase().includes(term));
+      const descMatch = script.description && script.description.toLowerCase().includes(term);
+      const tagMatch = Array.isArray(script.tags) && script.tags.some((t) => t.toLowerCase().includes(term));
       if (!nameMatch && !descMatch && !tagMatch) return false;
     }
     if (selectedTags.length > 0) {
@@ -69,22 +72,18 @@ export default function ScriptList({
 
   const isSearchActive = search.trim().length > 0 || selectedTags.length > 0;
 
-  // Build display groups
   const groups = useMemo(() => {
     if (isSearchActive) {
-      // Show all matching scripts from all folders, flat
       const allScripts = folders.flatMap((f) =>
         (f.scripts || []).map((s) => ({ ...s, _folderName: f.name }))
       );
       const matched = allScripts.filter(matchesFilters);
       return [{ folderName: null, scripts: matched, isEmpty: false }];
     } else if (selectedFolder && selectedFolder !== "all") {
-      // Show only scripts from the selected folder
       const folder = folders.find((f) => f.name === selectedFolder);
       const scripts = folder ? (folder.scripts || []) : [];
       return [{ folderName: null, scripts, isEmpty: scripts.length === 0, folder }];
     } else {
-      // Show all folders grouped
       return folders.map((f) => ({
         folderName: f.name,
         scripts: f.scripts || [],
@@ -94,7 +93,43 @@ export default function ScriptList({
     }
   }, [folders, search, selectedTags, selectedFolder]);
 
-  const totalVisible = groups.reduce((n, g) => n + g.scripts.length, 0);
+  const visibleScripts = useMemo(
+    () => groups.flatMap((g) => g.scripts),
+    [groups]
+  );
+  const totalVisible = visibleScripts.length;
+
+  // Batch helpers
+  const allVisibleSelected = totalVisible > 0 && visibleScripts.every((s) => batchSelected.has(s.path));
+
+  const handleSelectAll = () => {
+    if (allVisibleSelected) {
+      setBatchSelected(new Set());
+    } else {
+      setBatchSelected(new Set(visibleScripts.map((s) => s.path)));
+    }
+  };
+
+  const handleSelectToggle = (script) => {
+    setBatchSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(script.path)) next.delete(script.path);
+      else next.add(script.path);
+      return next;
+    });
+  };
+
+  const handleBatchMove = () => {
+    const scripts = visibleScripts.filter((s) => batchSelected.has(s.path));
+    onBatchAction?.("move", scripts);
+  };
+
+  const exitBatchMode = () => {
+    setBatchMode(false);
+    setBatchSelected(new Set());
+  };
+
+  const totalScripts = folders.reduce((n, f) => n + (f.scripts?.length || 0), 0);
 
   return (
     <div className="script-list">
@@ -112,7 +147,7 @@ export default function ScriptList({
             ref={tagBtnRef}
             className={`script-list-tag-filter ${selectedTags.length > 0 ? "active" : ""}`}
             onClick={() => setTagDropdownOpen((v) => !v)}
-            onKeyDown={(e) => { if (e.key === 'Escape') setTagDropdownOpen(false); }}
+            onKeyDown={(e) => { if (e.key === "Escape") setTagDropdownOpen(false); }}
             title="按标签筛选"
             aria-haspopup="listbox"
             aria-expanded={tagDropdownOpen}
@@ -124,15 +159,12 @@ export default function ScriptList({
               className="script-list-tag-dropdown"
               ref={tagDropdownRef}
               role="listbox"
-              onKeyDown={(e) => { if (e.key === 'Escape') setTagDropdownOpen(false); }}
+              onKeyDown={(e) => { if (e.key === "Escape") setTagDropdownOpen(false); }}
             >
               <div className="script-list-tag-dropdown-head">
                 <span className="script-list-tag-dropdown-title">标签筛选</span>
                 {selectedTags.length > 0 && (
-                  <button
-                    className="script-list-tag-clear"
-                    onClick={clearTagFilter}
-                  >
+                  <button className="script-list-tag-clear" onClick={clearTagFilter}>
                     清除筛选
                   </button>
                 )}
@@ -154,6 +186,19 @@ export default function ScriptList({
             </div>
           )}
         </div>
+        {/* Batch mode toggle */}
+        <button
+          className={`script-list-batch-btn${batchMode ? " active" : ""}`}
+          onClick={() => batchMode ? exitBatchMode() : setBatchMode(true)}
+          title={batchMode ? "退出多选" : "多选模式"}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="5" width="4" height="4" rx="1" />
+            <rect x="3" y="13" width="4" height="4" rx="1" />
+            <line x1="11" y1="7" x2="21" y2="7" />
+            <line x1="11" y1="15" x2="21" y2="15" />
+          </svg>
+        </button>
         <button className="script-list-refresh" onClick={onRefresh} title="刷新">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
@@ -162,17 +207,58 @@ export default function ScriptList({
         </button>
       </div>
 
+      {/* Batch action bar */}
+      {batchMode && (
+        <div className="script-list-batch-bar">
+          <label className="script-list-batch-select-all">
+            <input
+              type="checkbox"
+              checked={allVisibleSelected}
+              onChange={handleSelectAll}
+            />
+            <span>{batchSelected.size > 0 ? `已选 ${batchSelected.size} 个` : "全选"}</span>
+          </label>
+          <div className="script-list-batch-actions">
+            <button
+              className="script-list-batch-action"
+              onClick={handleBatchMove}
+              disabled={batchSelected.size === 0}
+            >
+              移动到...
+            </button>
+            <button className="script-list-batch-cancel" onClick={exitBatchMode}>
+              取消
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="script-list-items">
-        {isSearchActive && totalVisible === 0 ? (
-          <div className="script-list-empty">未找到匹配的脚本</div>
-        ) : !isSearchActive && groups.length === 0 ? (
-          <div className="script-list-empty">暂无脚本</div>
+        {/* Empty state: no scripts at all */}
+        {totalScripts === 0 && !isSearchActive ? (
+          <div className="script-list-empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" className="script-list-empty-icon">
+              <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
+            </svg>
+            <p className="script-list-empty-title">暂无脚本</p>
+            <p className="script-list-empty-hint">将 Python 脚本放入 <code>scripts/</code> 目录，然后刷新。</p>
+          </div>
+        ) : isSearchActive && totalVisible === 0 ? (
+          <div className="script-list-empty-state">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" className="script-list-empty-icon">
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <p className="script-list-empty-title">未找到匹配脚本</p>
+            <p className="script-list-empty-hint">尝试调整搜索词或筛选条件</p>
+          </div>
         ) : (
           groups.map((group, gi) => (
             <div key={group.folderName ?? `group-${gi}`} className="script-list-group">
               {group.folderName !== null && (
                 <div className="script-list-group-header">
-                  <span className="script-list-group-name">{group.folderName}</span>
+                  <span className="script-list-group-name">
+                    {group.folderName === "_unsorted" ? "未分类" : group.folderName}
+                  </span>
                   <span className="script-list-group-count">{group.scripts.length}</span>
                 </div>
               )}
@@ -181,20 +267,25 @@ export default function ScriptList({
               ) : (
                 group.scripts.map((script) => (
                   <ScriptCard
-                    key={isSearchActive ? `${script.folder || ''}/${script.path}` : script.path}
+                    key={isSearchActive ? `${script.folder || ""}/${script.path}` : script.path}
                     script={script}
-                    status={statuses[script.path]}
-                    selected={selectedScript === script.path}
+                    status={statuses[script.name]}
+                    selected={!batchMode && selectedScript === script.name}
                     onClick={() => {
                       if (script.is_draft) {
                         onEdit?.(script.parent_name);
                       } else {
-                        onSelect(script.path);
+                        onSelect(script.name);
                       }
                     }}
                     onEdit={onEdit}
                     onTagClick={onTagClick}
                     onContextMenu={onScriptAction}
+                    draggable={!batchMode}
+                    onDragStart={() => onDragStart?.(script)}
+                    selectable={batchMode && !script.is_draft}
+                    isSelected={batchSelected.has(script.path)}
+                    onSelectToggle={() => handleSelectToggle(script)}
                   />
                 ))
               )}

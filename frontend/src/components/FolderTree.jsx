@@ -13,7 +13,10 @@ export default function FolderTree({
   onDeleteFolder,
   collapsed = false,
   onToggleCollapse,
+  draggingScript = null,
+  onFolderDrop,
 }) {
+  const [dropTarget, setDropTarget] = useState(null); // folder name being hovered during drag
   const [inlineRename, setInlineRename] = useState(null); // { name: string, value: string }
   const [newFolderInput, setNewFolderInput] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
@@ -142,7 +145,7 @@ export default function FolderTree({
           <div className="folder-tree__list">
             {/* "全部" virtual node */}
             <div
-              className={`folder-tree__row${selectedFolder === "all" ? " folder-tree__row--active" : ""}`}
+              className={`folder-tree__row${selectedFolder === "all" ? " folder-tree__row--active" : ""}${dropTarget === "_unsorted" && draggingScript ? " folder-tree__row--drop-target" : ""}`}
               role="button"
               tabIndex={0}
               onClick={() => onSelectFolder?.("all")}
@@ -152,6 +155,9 @@ export default function FolderTree({
                   onSelectFolder?.("all");
                 }
               }}
+              onDragOver={draggingScript ? (e) => { e.preventDefault(); setDropTarget("_unsorted"); } : undefined}
+              onDragLeave={draggingScript ? () => setDropTarget(null) : undefined}
+              onDrop={draggingScript ? (e) => { e.preventDefault(); setDropTarget(null); onFolderDrop?.("_unsorted"); } : undefined}
             >
               <span className="folder-tree__icon">🗂️</span>
               <span className="folder-tree__name">全部</span>
@@ -168,7 +174,7 @@ export default function FolderTree({
               return (
                 <div
                   key={folder.name}
-                  className={`folder-tree__row${active ? " folder-tree__row--active" : ""}${isMenuOpen ? " folder-tree__row--menu-open" : ""}`}
+                  className={`folder-tree__row${active ? " folder-tree__row--active" : ""}${isMenuOpen ? " folder-tree__row--menu-open" : ""}${dropTarget === folder.name && draggingScript ? " folder-tree__row--drop-target" : ""}`}
                   role="button"
                   tabIndex={0}
                   onClick={() => {
@@ -183,6 +189,9 @@ export default function FolderTree({
                   onDoubleClick={() => {
                     if (!isRenaming) handleRenameStart(folder);
                   }}
+                  onDragOver={draggingScript ? (e) => { e.preventDefault(); setDropTarget(folder.name); } : undefined}
+                  onDragLeave={draggingScript ? () => setDropTarget(null) : undefined}
+                  onDrop={draggingScript ? (e) => { e.preventDefault(); setDropTarget(null); onFolderDrop?.(folder.name); } : undefined}
                 >
                   <span className="folder-tree__icon">{folder.icon || "📁"}</span>
 

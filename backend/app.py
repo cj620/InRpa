@@ -19,6 +19,15 @@ from backend.drafts import (
     read_script_content, read_draft, save_draft,
     delete_draft, publish_draft, get_draft_path,
 )
+from backend.scripts_data import (
+    build_folder_groups,
+    create_folder as _create_folder,
+    rename_folder as _rename_folder,
+    delete_folder as _delete_folder,
+    move_script as _move_script,
+    update_script_meta as _update_script_meta,
+    get_script_meta,
+)
 
 SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "scripts")
 
@@ -53,8 +62,65 @@ async def broadcast(message: dict):
 
 @app.get("/api/scripts")
 async def list_scripts():
-    """Return list of available scripts."""
-    return scan_scripts(SCRIPTS_DIR)
+    """Return list of available scripts enriched with metadata."""
+    scripts = scan_scripts(SCRIPTS_DIR)
+    for s in scripts:
+        if not s.get("is_draft"):
+            meta = get_script_meta(s["name"])
+            s["tags"] = meta.get("tags", [])
+            s["description"] = meta.get("description", "")
+            s["folder"] = meta.get("folder")
+    return scripts
+
+
+@app.get("/api/folders")
+async def list_folders():
+    """Return scripts grouped into folder objects."""
+    scripts = scan_scripts(SCRIPTS_DIR)
+    return build_folder_groups(scripts)
+
+
+@app.post("/api/folders")
+async def create_folder(body: dict):
+    name = body.get("name", "").strip()
+    if not name:
+        return JSONResponse(status_code=400, content={"error": "Folder name required"})
+    folder = _create_folder(name, body.get("icon", "📁"))
+    if folder is None:
+        return JSONResponse(status_code=409, content={"error": f"Folder '{name}' already exists"})
+    return folder
+
+
+@app.put("/api/folders/{name}")
+async def rename_folder(name: str, body: dict):
+    new_name = body.get("name", "").strip()
+    if not new_name:
+        return JSONResponse(status_code=400, content={"error": "New name required"})
+    if _rename_folder(name, new_name):
+        return {"message": "renamed"}
+    return JSONResponse(status_code=404, content={"error": "Folder not found"})
+
+
+@app.delete("/api/folders/{name}")
+async def delete_folder(name: str):
+    if _delete_folder(name):
+        return {"message": "deleted"}
+    return JSONResponse(status_code=404, content={"error": "Folder not found"})
+
+
+@app.put("/api/scripts/{name}/folder")
+async def move_script(name: str, body: dict):
+    folder_name = body.get("folder")  # None to unassign
+    _move_script(name, folder_name)
+    return {"message": "moved"}
+
+
+@app.put("/api/scripts/{name}/meta")
+async def update_script_meta(name: str, body: dict):
+    tags = body.get("tags")
+    description = body.get("description")
+    _update_script_meta(name, tags=tags, description=description)
+    return {"message": "updated"}
 
 
 @app.post("/api/scripts/{name}/run")

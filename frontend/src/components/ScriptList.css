@@ -145,6 +145,107 @@
   color: var(--text-secondary);
 }
 
+/* Batch mode toggle button */
+.script-list-batch-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.script-list-batch-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.script-list-batch-btn.active {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+}
+
+/* Batch action bar */
+.script-list-batch-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-card));
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.script-list-batch-select-all {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--text-primary);
+  user-select: none;
+}
+
+.script-list-batch-select-all input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 13px;
+  height: 13px;
+  cursor: pointer;
+}
+
+.script-list-batch-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.script-list-batch-action {
+  height: 26px;
+  padding: 0 10px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.script-list-batch-action:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.script-list-batch-action:not(:disabled):hover {
+  opacity: 0.85;
+}
+
+.script-list-batch-cancel {
+  height: 26px;
+  padding: 0 10px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border: none;
+  border-radius: 5px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.script-list-batch-cancel:hover {
+  background: var(--border);
+  color: var(--text-primary);
+}
+
 /* Refresh button */
 .script-list-refresh {
   width: 32px;
@@ -178,6 +279,48 @@
   text-align: center;
   color: var(--text-secondary);
   font-size: 13px;
+}
+
+/* Rich empty state */
+.script-list-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  gap: 8px;
+}
+
+.script-list-empty-icon {
+  color: var(--text-secondary);
+  opacity: 0.35;
+  margin-bottom: 4px;
+}
+
+.script-list-empty-title {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.script-list-empty-hint {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--text-secondary);
+  opacity: 0.6;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.script-list-empty-hint code {
+  font-family: var(--font-mono);
+  background: var(--bg-card);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 11px;
 }
 
 /* Folder group */
