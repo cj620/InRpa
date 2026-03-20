@@ -19,16 +19,17 @@ export function useWebSocket() {
 
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
+      const key = msg.source === "draft" ? `draft:${msg.script}` : msg.script;
 
       if (msg.type === "log") {
         setLogs((prev) => ({
           ...prev,
-          [msg.script]: [...(prev[msg.script] || []), msg.data],
+          [key]: [...(prev[key] || []), msg.data],
         }));
       } else if (msg.type === "status") {
         setStatuses((prev) => ({
           ...prev,
-          [msg.script]: msg.data,
+          [key]: msg.data,
         }));
       }
     };
