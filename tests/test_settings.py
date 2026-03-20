@@ -71,6 +71,23 @@ async def test_load_merges_with_defaults(tmp_path, monkeypatch):
     assert result["editor"]["font_size"] == 14
 
 
+@pytest.mark.asyncio
+async def test_theme_in_default_settings():
+    """Default settings should include theme field."""
+    result = settings_mod.load_settings()
+    assert result["theme"] == "dark"
+
+
+@pytest.mark.asyncio
+async def test_update_theme_setting():
+    """PUT /api/settings should persist theme choice."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.put("/api/settings", json={"theme": "light"})
+    assert resp.status_code == 200
+    assert resp.json()["theme"] == "light"
+
+
 def test_default_settings_not_mutated():
     """save_settings must not mutate DEFAULT_SETTINGS."""
     import copy

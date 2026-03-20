@@ -22,7 +22,8 @@ DEFAULT_SETTINGS = {
         "tab_size": 4,
         "word_wrap": True
     },
-    "scripts_dir": "./scripts"
+    "scripts_dir": "./scripts",
+    "theme": "dark"
 }
 
 
