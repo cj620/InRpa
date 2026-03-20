@@ -8,7 +8,7 @@ import SettingsPanel from "./components/SettingsPanel";
 import EditorPage from "./components/editor/EditorPage";
 import StatusBar from "./components/StatusBar";
 import { ToastContainer } from "./components/Toast";
-import { fetchScripts, runScript, stopScript } from "./api";
+import { fetchScripts, runScript, stopScript, fetchSettings, updateSettings } from "./api";
 import { useWebSocket } from "./hooks/useWebSocket";
 import "./App.css";
 
@@ -16,10 +16,34 @@ export default function App() {
   const [scripts, setScripts] = useState([]);
   const [selectedScript, setSelectedScript] = useState(null);
   const [activePage, setActivePage] = useState("scripts");
+  const [theme, setTheme] = useState("dark");
   const { connected, logs, statuses, clearLogs } = useWebSocket();
   // Track which pages have been visited so we mount them once and keep them alive
   const [mountedPages, setMountedPages] = useState({ scripts: true });
   const editorOpenScriptRef = useRef(null);
+
+  // Apply theme to DOM whenever it changes
+  useEffect(() => {
+    if (theme === "dark") {
+      delete document.documentElement.dataset.theme;
+    } else {
+      document.documentElement.dataset.theme = theme;
+    }
+  }, [theme]);
+
+  // Load theme from backend on mount
+  useEffect(() => {
+    fetchSettings().then((data) => {
+      if (data?.theme) setTheme(data.theme);
+    }).catch(() => {});
+  }, []);
+
+  const handleThemeChange = useCallback((newTheme) => {
+    setTheme(newTheme);
+    updateSettings({ theme: newTheme }).catch((err) =>
+      console.error("Failed to save theme:", err)
+    );
+  }, []);
 
   // Ensure a page gets mounted when navigated to (and stays mounted)
   const handlePageChange = useCallback((page) => {
@@ -74,7 +98,7 @@ export default function App() {
       <ToastContainer />
       <TitleBar />
       <div className="app-body">
-        <Sidebar activePage={activePage} onPageChange={handlePageChange} />
+        <Sidebar activePage={activePage} onPageChange={handlePageChange} theme={theme} onThemeChange={handleThemeChange} />
         {/* Scripts page — always mounted */}
         <div className="app-page" style={{ display: activePage === "scripts" ? "contents" : "none" }}>
           <ScriptList
@@ -114,7 +138,7 @@ export default function App() {
         {/* Settings page */}
         {mountedPages.settings && (
           <div className="app-page" style={{ display: activePage === "settings" ? "contents" : "none" }}>
-            <SettingsPanel />
+            <SettingsPanel theme={theme} onThemeChange={handleThemeChange} />
           </div>
         )}
       </div>
