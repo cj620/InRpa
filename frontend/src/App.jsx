@@ -5,6 +5,7 @@ import ScriptList from "./components/ScriptList";
 import LogPanel from "./components/LogPanel";
 import FilesPanel from "./components/FilesPanel";
 import SettingsPanel from "./components/SettingsPanel";
+import EditorPage from "./components/editor/EditorPage";
 import StatusBar from "./components/StatusBar";
 import { fetchScripts, runScript, stopScript } from "./api";
 import { useWebSocket } from "./hooks/useWebSocket";
@@ -77,6 +78,9 @@ export default function App() {
           </>
         )}
         {activePage === "files" && <FilesPanel scripts={scripts} />}
+        {activePage === "editor" && (
+          <EditorPage scripts={scripts} logs={logs} statuses={statuses} />
+        )}
         {activePage === "settings" && <SettingsPanel />}
       </div>
       <StatusBar

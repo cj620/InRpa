@@ -1,0 +1,323 @@
+.editor-toolbar {
+  height: 40px;
+  min-height: 40px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  gap: 8px;
+}
+
+/* ── Left zone ── */
+.editor-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* ── Script selector ── */
+.script-selector {
+  position: relative;
+}
+
+.script-selector-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  white-space: nowrap;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.script-selector-trigger:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--bg-card);
+}
+
+.script-selector-trigger.open {
+  border-color: var(--accent);
+  background: var(--bg-card);
+}
+
+.script-selector-chevron {
+  flex-shrink: 0;
+  opacity: 0.5;
+  transition: transform 0.2s;
+}
+
+.script-selector-trigger.open .script-selector-chevron {
+  transform: rotate(180deg);
+}
+
+.script-selector-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 280px;
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  overflow: hidden;
+  opacity: 0;
+  max-height: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.2s ease, max-height 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.script-selector-dropdown.visible {
+  opacity: 1;
+  max-height: 320px;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.script-selector-search {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.script-selector-search-icon {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  margin-right: 8px;
+}
+
+.script-selector-search input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 12px;
+}
+
+.script-selector-search input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.script-selector-list {
+  max-height: 256px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.script-selector-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.1s;
+  gap: 8px;
+}
+
+.script-selector-item:hover {
+  background: var(--bg-hover);
+}
+
+.script-selector-item.selected {
+  background: rgba(108, 92, 231, 0.12);
+}
+
+.script-selector-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.script-selector-item-name {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.script-selector-draft-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.script-selector-item-date {
+  font-size: 11px;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.script-selector-empty {
+  padding: 16px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* ── Status badge ── */
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.status-badge-draft {
+  color: var(--accent-light);
+  background: rgba(108, 92, 231, 0.12);
+}
+
+.status-badge-published {
+  color: var(--status-success);
+  background: rgba(0, 214, 143, 0.12);
+  animation: badgeFadeIn 0.3s ease;
+}
+
+.status-badge-dirty-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--status-running);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes badgeFadeIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ── Right zone ── */
+.editor-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.toolbar-btn {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  position: relative;
+}
+
+.toolbar-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.toolbar-btn.active {
+  color: var(--accent-light);
+  background: rgba(108, 92, 231, 0.1);
+}
+
+.toolbar-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.toolbar-btn:disabled:hover {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
+.toolbar-run-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 6px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.toolbar-run-btn:active {
+  transform: scale(0.96);
+}
+
+.toolbar-run-btn.run {
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
+  color: #fff;
+}
+
+.toolbar-run-btn.run:hover {
+  box-shadow: 0 0 16px rgba(108, 92, 231, 0.35);
+}
+
+.toolbar-run-btn.run:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.toolbar-run-btn.stop {
+  background: var(--status-fail);
+  color: #fff;
+}
+
+.toolbar-run-btn.stop:hover {
+  box-shadow: 0 0 16px rgba(255, 107, 107, 0.3);
+}
+
+/* ── Backdrop ── */
+.script-selector-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+}

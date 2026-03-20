@@ -1,0 +1,102 @@
+.editor-action-bar {
+  height: 44px;
+  min-height: 44px;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.editor-action-bar-left,
+.editor-action-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Button base ── */
+.eab-btn {
+  height: 30px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 6px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.1s, opacity 0.15s;
+  white-space: nowrap;
+}
+
+.eab-btn:active {
+  transform: scale(0.97);
+}
+
+.eab-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Primary (save draft) ── */
+.eab-btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.eab-btn-primary:hover:not(:disabled) {
+  background: var(--accent-light);
+  box-shadow: 0 0 12px rgba(108, 92, 231, 0.3);
+}
+
+/* ── Outlined (publish) ── */
+.eab-btn-outlined {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.eab-btn-outlined:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ── Danger text (discard) ── */
+.eab-btn-danger {
+  background: transparent;
+  color: var(--status-fail);
+}
+
+.eab-btn-danger:hover:not(:disabled) {
+  background: rgba(255, 107, 107, 0.1);
+}
+
+/* ── Subtle text (external) ── */
+.eab-btn-subtle {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.eab-btn-subtle:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+/* ── Saving spinner ── */
+.eab-spinner {
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
