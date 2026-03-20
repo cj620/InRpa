@@ -32,3 +32,49 @@
 .statusbar-text {
   color: var(--text-secondary);
 }
+
+.statusbar-separator {
+  width: 1px;
+  height: 12px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
+.statusbar-ai {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 3px;
+  transition: background 0.15s;
+}
+
+.statusbar-ai:hover {
+  background: var(--bg-hover);
+}
+
+.statusbar-ai-icon {
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.statusbar-ai-model {
+  color: var(--text-secondary);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+}
+
+.statusbar-dot-small {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  opacity: 0.5;
+  transition: background 0.3s, opacity 0.3s;
+}
+
+.statusbar-dot-small.configured {
+  background: var(--status-success);
+  opacity: 1;
+}
