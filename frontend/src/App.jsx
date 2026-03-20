@@ -263,20 +263,8 @@ export default function App() {
             onThemeChange={handleThemeChange}
           />
 
-          {/* Scripts page: FolderTree | ScriptList | LogPanel */}
+          {/* Scripts page: ScriptList | LogPanel */}
           <div className="app-page" style={{ display: activePage === "scripts" ? "contents" : "none" }}>
-            <FolderTree
-              folders={folders}
-              selectedFolder={selectedFolder}
-              onSelectFolder={setSelectedFolder}
-              onCreateFolder={handleCreateFolder}
-              onRenameFolder={handleRenameFolder}
-              onDeleteFolder={handleDeleteFolder}
-              collapsed={folderTreeCollapsed}
-              onToggleCollapse={() => setFolderTreeCollapsed((v) => !v)}
-              draggingScript={draggingScript}
-              onFolderDrop={handleFolderDrop}
-            />
             <ScriptList
               folders={folders}
               tags={allTags}
@@ -301,10 +289,26 @@ export default function App() {
             />
           </div>
 
-          {/* Files page */}
+          {/* Files page: FolderTree | FilesPanel */}
           {mountedPages.files && (
             <div className="app-page" style={{ display: activePage === "files" ? "contents" : "none" }}>
-              <FilesPanel scripts={allScripts} onEdit={handleEditScript} />
+              <FolderTree
+                folders={folders}
+                selectedFolder={selectedFolder}
+                onSelectFolder={setSelectedFolder}
+                onCreateFolder={handleCreateFolder}
+                onRenameFolder={handleRenameFolder}
+                onDeleteFolder={handleDeleteFolder}
+                collapsed={folderTreeCollapsed}
+                onToggleCollapse={() => setFolderTreeCollapsed((v) => !v)}
+                draggingScript={null}
+                onFolderDrop={null}
+              />
+              <FilesPanel
+                folders={folders}
+                selectedFolder={selectedFolder}
+                onEdit={handleEditScript}
+              />
             </div>
           )}
 

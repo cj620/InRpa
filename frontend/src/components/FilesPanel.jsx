@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import "./FilesPanel.css";
 
 function formatSize(bytes) {
@@ -28,12 +28,22 @@ function countLines(size) {
   return `~${Math.max(1, Math.round(size / 40))} 行`;
 }
 
-export default function FilesPanel({ scripts, onEdit }) {
+export default function FilesPanel({ folders, selectedFolder, onEdit }) {
+  const scripts = useMemo(() => {
+    if (!selectedFolder || selectedFolder === "all") {
+      return (folders || []).flatMap((f) => f.scripts || []);
+    }
+    const folder = (folders || []).find((f) => f.name === selectedFolder);
+    return folder ? (folder.scripts || []) : [];
+  }, [folders, selectedFolder]);
+
+  const title = (!selectedFolder || selectedFolder === "all") ? "全部文件" : selectedFolder;
+
   return (
     <div className="files-panel">
       <div className="files-panel-header">
         <div className="files-panel-title">
-          <h3>Script Files</h3>
+          <h3>{title}</h3>
           <span className="files-panel-count">{scripts.length} 个文件</span>
         </div>
       </div>
