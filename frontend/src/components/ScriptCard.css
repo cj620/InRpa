@@ -7,6 +7,7 @@
   cursor: pointer;
   transition: background 0.15s, transform 0.15s;
   overflow: hidden;
+  position: relative;
 }
 
 .script-card:hover {
@@ -58,21 +59,54 @@
   min-width: 0;
 }
 
+.script-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
 .script-card-name {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.script-card-draft-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  background: rgba(108, 92, 231, 0.12);
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--accent-light);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.script-card-draft-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
 .script-card-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   font-size: 11px;
+}
+
+.script-card-sep {
+  color: var(--text-secondary);
+  opacity: 0.4;
 }
 
 .script-card-status {
@@ -88,4 +122,37 @@
 
 .script-card-size {
   color: var(--text-secondary);
+}
+
+.script-card-time {
+  color: var(--text-secondary);
+}
+
+/* Edit button — hidden by default, shown on hover */
+.script-card-edit {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, transform 0.15s;
+}
+
+.script-card:hover .script-card-edit {
+  opacity: 1;
+}
+
+.script-card-edit:hover {
+  background: var(--accent-light);
+  transform: translateY(-50%) scale(1.08);
 }

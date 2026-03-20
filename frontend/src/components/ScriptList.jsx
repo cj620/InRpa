@@ -8,6 +8,7 @@ export default function ScriptList({
   selectedScript,
   onSelect,
   onRefresh,
+  onEdit,
 }) {
   const [search, setSearch] = React.useState("");
 
@@ -43,6 +44,7 @@ export default function ScriptList({
               status={statuses[script.name]}
               selected={selectedScript === script.name}
               onClick={() => onSelect(script.name)}
+              onEdit={onEdit}
             />
           ))
         )}

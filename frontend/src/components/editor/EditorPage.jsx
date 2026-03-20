@@ -13,7 +13,7 @@ import ConfirmDialog from "../ConfirmDialog";
 import { toast } from "../Toast";
 import "./EditorPage.css";
 
-export default function EditorPage({ scripts, logs, statuses }) {
+export default function EditorPage({ scripts, logs, statuses, openScriptRef }) {
   const editor = useEditor();
   const draftRunner = useDraftRunner(editor.selectedScript, logs, statuses);
   const aiChat = useAIChat();
@@ -21,6 +21,17 @@ export default function EditorPage({ scripts, logs, statuses }) {
   const [activeTab, setActiveTab] = useState("ai");
   const [confirmAction, setConfirmAction] = useState(null);
   const pendingSwitchRef = useRef(null);
+
+  // Handle external script open requests (e.g. from ScriptList edit button)
+  useEffect(() => {
+    if (openScriptRef?.current) {
+      const name = openScriptRef.current;
+      openScriptRef.current = null;
+      if (name !== editor.selectedScript) {
+        editor.loadScript(name);
+      }
+    }
+  });
 
   const handleSelectScript = (name) => {
     if (name === editor.selectedScript) return;

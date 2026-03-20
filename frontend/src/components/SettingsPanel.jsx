@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { fetchSettings, updateSettings } from "../api";
+import { fetchSettings, updateSettings, testAIConnection } from "../api";
 import "./SettingsPanel.css";
 
 const PROVIDER_DEFAULTS = {
@@ -214,38 +214,15 @@ export default function SettingsPanel() {
     setTestState("loading");
     setTestMsg("");
     try {
-      const res = await fetch("http://localhost:8000/api/ai/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: "",
-          message: "Hi, this is a connection test. Reply with 'ok'.",
-          history: [],
-        }),
+      // Send current form values directly — no need to save first
+      await testAIConnection({
+        provider: settings.ai.provider,
+        api_url: settings.ai.api_url,
+        api_key: settings.ai.api_key,
+        model: settings.ai.model,
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || `HTTP ${res.status}`);
-      }
-      // Read the stream — just need to confirm it works
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let gotContent = false;
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const text = decoder.decode(value, { stream: true });
-        if (text.includes('"content"') || text.includes('"done"')) {
-          gotContent = true;
-        }
-      }
-      if (gotContent) {
-        setTestState("success");
-        setTestMsg("连接成功");
-      } else {
-        setTestState("success");
-        setTestMsg("连接成功");
-      }
+      setTestState("success");
+      setTestMsg("连接成功");
     } catch (err) {
       setTestState("error");
       setTestMsg(err.message || "连接失败");

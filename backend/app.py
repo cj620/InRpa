@@ -191,6 +191,77 @@ async def publish_draft_endpoint(name: str):
     return JSONResponse(status_code=404, content={"error": "No draft to publish"})
 
 
+@app.post("/api/ai/test")
+async def ai_test(body: dict):
+    """Test AI connection with provided config (not saved settings)."""
+    import httpx
+
+    provider = body.get("provider", "openai")
+    api_url = body.get("api_url", "")
+    api_key = body.get("api_key", "")
+    model = body.get("model", "")
+
+    if not api_key:
+        return JSONResponse(status_code=400, content={"error": "API Key 未填写"})
+    if not api_url:
+        return JSONResponse(status_code=400, content={"error": "API 地址未填写"})
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            if provider == "anthropic":
+                res = await client.post(
+                    f"{api_url}/messages",
+                    headers={
+                        "x-api-key": api_key,
+                        "anthropic-version": "2023-06-01",
+                        "content-type": "application/json",
+                    },
+                    json={
+                        "model": model or "claude-sonnet-4-20250514",
+                        "max_tokens": 10,
+                        "messages": [{"role": "user", "content": "Hi"}],
+                    },
+                )
+            else:
+                # OpenAI-compatible: use chat completions with minimal tokens
+                res = await client.post(
+                    f"{api_url}/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": model or "gpt-4o",
+                        "max_tokens": 10,
+                        "messages": [{"role": "user", "content": "Hi"}],
+                    },
+                )
+
+            if res.status_code == 401:
+                return JSONResponse(status_code=400, content={"error": "API Key 无效 (401)"})
+            if res.status_code == 403:
+                return JSONResponse(status_code=400, content={"error": "访问被拒绝 (403)"})
+            if res.status_code == 404:
+                return JSONResponse(status_code=400, content={"error": "模型不存在或 API 地址错误 (404)"})
+            if res.status_code >= 400:
+                detail = ""
+                try:
+                    err_body = res.json()
+                    detail = err_body.get("error", {}).get("message", "") or str(err_body.get("error", ""))
+                except Exception:
+                    detail = res.text[:200]
+                return JSONResponse(status_code=400, content={"error": f"请求失败 ({res.status_code}): {detail}"})
+
+            return {"message": "连接成功"}
+
+    except httpx.ConnectError:
+        return JSONResponse(status_code=400, content={"error": "无法连接到 API 服务器，请检查地址"})
+    except httpx.TimeoutException:
+        return JSONResponse(status_code=400, content={"error": "连接超时，请检查网络或 API 地址"})
+    except Exception as e:
+        return JSONResponse(status_code=400, content={"error": f"连接失败: {str(e)}"})
+
+
 @app.post("/api/ai/chat")
 async def ai_chat(body: dict):
     """AI chat endpoint — streams response via SSE."""

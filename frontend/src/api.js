@@ -100,6 +100,17 @@ export async function updateSettings(settings) {
     return res.json();
 }
 
+export async function testAIConnection(aiConfig) {
+    const res = await fetch(`${API_BASE}/api/ai/test`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(aiConfig),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "连接失败");
+    return data;
+}
+
 export function streamAIChat({ code, message, history }, onChunk, onDone, onError) {
     const controller = new AbortController();
     fetch(`${API_BASE}/api/ai/chat`, {

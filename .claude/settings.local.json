@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ls -la /c/Users/Administrator/Desktop/AI/rpa-mpv/frontend/src/components/*.css)"
+      "Bash(ls -la /c/Users/Administrator/Desktop/AI/rpa-mpv/frontend/src/components/*.css)",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }
