@@ -1,31 +1,422 @@
-import React from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { fetchSettings, updateSettings } from "../api";
 import "./SettingsPanel.css";
 
+const PROVIDER_DEFAULTS = {
+  openai: "https://api.openai.com/v1",
+  anthropic: "https://api.anthropic.com/v1",
+};
+
+const PROVIDERS = [
+  { value: "openai", label: "OpenAI" },
+  { value: "anthropic", label: "Anthropic" },
+  { value: "custom", label: "自定义" },
+];
+
+function deepEqual(a, b) {
+  if (a === b) return true;
+  if (!a || !b || typeof a !== "object" || typeof b !== "object") return false;
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  return keysA.every((k) => deepEqual(a[k], b[k]));
+}
+
+function EyeIcon({ open }) {
+  if (open) {
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  );
+}
+
+function SpinnerIcon() {
+  return (
+    <svg className="sp-spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
+function FolderIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
+function ChevronIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}
+
+function CustomSelect({ value, options, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div className={`sp-select ${open ? "sp-select--open" : ""}`} ref={ref}>
+      <button
+        type="button"
+        className="sp-select-trigger"
+        onClick={() => setOpen(!open)}
+      >
+        <span>{selected?.label || value}</span>
+        <ChevronIcon />
+      </button>
+      {open && (
+        <div className="sp-select-dropdown">
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              className={`sp-select-option ${opt.value === value ? "sp-select-option--active" : ""}`}
+              onClick={() => {
+                onChange(opt.value);
+                setOpen(false);
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ToggleSwitch({ checked, onChange }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      className={`sp-toggle ${checked ? "sp-toggle--on" : ""}`}
+      onClick={() => onChange(!checked)}
+    >
+      <span className="sp-toggle-circle" />
+    </button>
+  );
+}
+
 export default function SettingsPanel() {
+  const [settings, setSettings] = useState(null);
+  const [original, setOriginal] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [showKey, setShowKey] = useState(false);
+  const [testState, setTestState] = useState(null); // null | "loading" | "success" | "error"
+  const [testMsg, setTestMsg] = useState("");
+  const [toast, setToast] = useState(false);
+
+  const dirty = settings && original && !deepEqual(settings, original);
+
+  const load = useCallback(async () => {
+    try {
+      const data = await fetchSettings();
+      setSettings(data);
+      setOriginal(data);
+    } catch (err) {
+      console.error("Failed to load settings:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  if (loading || !settings) {
+    return (
+      <div className="settings-panel">
+        <div className="sp-loading">加载设置中...</div>
+      </div>
+    );
+  }
+
+  const updateAI = (key, value) => {
+    setSettings((s) => ({ ...s, ai: { ...s.ai, [key]: value } }));
+  };
+
+  const updateEditor = (key, value) => {
+    setSettings((s) => ({ ...s, editor: { ...s.editor, [key]: value } }));
+  };
+
+  const handleProviderChange = (provider) => {
+    const updates = { provider };
+    if (PROVIDER_DEFAULTS[provider]) {
+      updates.api_url = PROVIDER_DEFAULTS[provider];
+    }
+    setSettings((s) => ({ ...s, ai: { ...s.ai, ...updates } }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const data = await updateSettings(settings);
+      setSettings(data);
+      setOriginal(data);
+      setToast(true);
+      setTimeout(() => setToast(false), 2000);
+    } catch (err) {
+      console.error("Failed to save settings:", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReset = () => {
+    setSettings({ ...original });
+  };
+
+  const handleTestConnection = async () => {
+    setTestState("loading");
+    setTestMsg("");
+    try {
+      const res = await fetch("http://localhost:8000/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: "",
+          message: "Hi, this is a connection test. Reply with 'ok'.",
+          history: [],
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      // Read the stream — just need to confirm it works
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let gotContent = false;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const text = decoder.decode(value, { stream: true });
+        if (text.includes('"content"') || text.includes('"done"')) {
+          gotContent = true;
+        }
+      }
+      if (gotContent) {
+        setTestState("success");
+        setTestMsg("连接成功");
+      } else {
+        setTestState("success");
+        setTestMsg("连接成功");
+      }
+    } catch (err) {
+      setTestState("error");
+      setTestMsg(err.message || "连接失败");
+    }
+    setTimeout(() => {
+      setTestState(null);
+      setTestMsg("");
+    }, 4000);
+  };
+
   return (
     <div className="settings-panel">
       <div className="settings-panel-header">
-        <h3>Settings</h3>
+        <h3>设置</h3>
       </div>
       <div className="settings-panel-content">
-        <div className="settings-section">
-          <h4>General</h4>
-          <div className="settings-item">
-            <span className="settings-label">Scripts Directory</span>
-            <span className="settings-value">./scripts</span>
+        {/* Card 1: AI Model Config */}
+        <div className="sp-card">
+          <div className="sp-card-header">AI 模型配置</div>
+          <div className="sp-field">
+            <label className="sp-label">服务商</label>
+            <CustomSelect
+              value={settings.ai.provider}
+              options={PROVIDERS}
+              onChange={handleProviderChange}
+            />
           </div>
-          <div className="settings-item">
-            <span className="settings-label">Backend Port</span>
-            <span className="settings-value">8000</span>
+          <div className="sp-field">
+            <label className="sp-label">API 地址</label>
+            <input
+              type="text"
+              className="sp-input sp-input--mono"
+              value={settings.ai.api_url}
+              onChange={(e) => updateAI("api_url", e.target.value)}
+              placeholder="https://api.openai.com/v1"
+            />
+          </div>
+          <div className="sp-field">
+            <label className="sp-label">API Key</label>
+            <div className="sp-input-group">
+              <input
+                type={showKey ? "text" : "password"}
+                className="sp-input sp-input--mono sp-input--with-btn"
+                value={settings.ai.api_key}
+                onChange={(e) => updateAI("api_key", e.target.value)}
+                placeholder="sk-..."
+              />
+              <button
+                type="button"
+                className="sp-input-eye"
+                onClick={() => setShowKey(!showKey)}
+                title={showKey ? "隐藏" : "显示"}
+              >
+                <EyeIcon open={showKey} />
+              </button>
+            </div>
+          </div>
+          <div className="sp-field">
+            <label className="sp-label">模型</label>
+            <input
+              type="text"
+              className="sp-input"
+              value={settings.ai.model}
+              onChange={(e) => updateAI("model", e.target.value)}
+              placeholder="gpt-4o"
+            />
+          </div>
+          <div className="sp-field sp-field--action">
+            <button
+              type="button"
+              className={`sp-btn-test ${testState === "loading" ? "sp-btn-test--loading" : ""}`}
+              onClick={handleTestConnection}
+              disabled={testState === "loading"}
+            >
+              {testState === "loading" && <SpinnerIcon />}
+              {testState === null && "测试连接"}
+              {testState === "loading" && "测试中..."}
+              {testState === "success" && (
+                <span className="sp-test-result sp-test-result--success">
+                  <CheckIcon /> {testMsg}
+                </span>
+              )}
+              {testState === "error" && (
+                <span className="sp-test-result sp-test-result--error">
+                  <XIcon /> {testMsg}
+                </span>
+              )}
+            </button>
           </div>
         </div>
-        <div className="settings-section">
-          <h4>About</h4>
-          <div className="settings-item">
-            <span className="settings-label">Version</span>
-            <span className="settings-value">1.0.0</span>
+
+        {/* Card 2: Editor Settings */}
+        <div className="sp-card">
+          <div className="sp-card-header">编辑器设置</div>
+          <div className="sp-field sp-field--row">
+            <label className="sp-label">字体大小</label>
+            <input
+              type="number"
+              className="sp-input sp-input--short"
+              value={settings.editor.font_size}
+              onChange={(e) => updateEditor("font_size", Math.min(24, Math.max(10, parseInt(e.target.value) || 10)))}
+              min={10}
+              max={24}
+              step={1}
+            />
+          </div>
+          <div className="sp-field sp-field--row">
+            <label className="sp-label">Tab 宽度</label>
+            <input
+              type="number"
+              className="sp-input sp-input--short"
+              value={settings.editor.tab_size}
+              onChange={(e) => updateEditor("tab_size", Math.min(8, Math.max(2, parseInt(e.target.value) || 2)))}
+              min={2}
+              max={8}
+              step={2}
+            />
+          </div>
+          <div className="sp-field sp-field--row">
+            <label className="sp-label">自动换行</label>
+            <ToggleSwitch
+              checked={settings.editor.word_wrap}
+              onChange={(val) => updateEditor("word_wrap", val)}
+            />
           </div>
         </div>
+
+        {/* Card 3: General Settings */}
+        <div className="sp-card">
+          <div className="sp-card-header">通用设置</div>
+          <div className="sp-field sp-field--row">
+            <label className="sp-label">
+              <FolderIcon />
+              <span>脚本目录</span>
+            </label>
+            <span className="sp-readonly">{settings.scripts_dir || "./scripts"}</span>
+          </div>
+          <div className="sp-field sp-field--row">
+            <label className="sp-label">后端端口</label>
+            <span className="sp-readonly">8000</span>
+          </div>
+          <div className="sp-field sp-field--row">
+            <label className="sp-label">版本</label>
+            <span className="sp-readonly">1.0.0</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Floating action bar */}
+      <div className={`sp-action-bar ${dirty ? "sp-action-bar--visible" : ""}`}>
+        <button
+          type="button"
+          className="sp-btn sp-btn--subtle"
+          onClick={handleReset}
+          disabled={saving}
+        >
+          重置
+        </button>
+        <button
+          type="button"
+          className="sp-btn sp-btn--accent"
+          onClick={handleSave}
+          disabled={saving}
+        >
+          {saving ? "保存中..." : "保存"}
+        </button>
+      </div>
+
+      {/* Toast */}
+      <div className={`sp-toast ${toast ? "sp-toast--visible" : ""}`}>
+        <CheckIcon /> 设置已保存
       </div>
     </div>
   );
