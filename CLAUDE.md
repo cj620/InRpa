@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-RPA Desktop Manager — an Electron + React + FastAPI desktop app for managing and running Python automation scripts with real-time log streaming.
+InRpa — an Electron + React + FastAPI desktop app for managing and running Python automation scripts with real-time log streaming.
 
 **Stack:** Electron 33 (frameless window) → React 19 + Vite 6 (frontend) → FastAPI + uvicorn (backend on :8000) → Python subprocesses (scripts)
 

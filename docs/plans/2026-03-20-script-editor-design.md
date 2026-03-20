@@ -5,7 +5,7 @@
 
 ## Overview
 
-为 RPA Desktop Manager 新增脚本编辑器模块，支持内嵌代码编辑（Monaco Editor）、AI 辅助修改（对话式）、草稿/发布版本管理、草稿热测试，以及一键打开外部编辑器的混合模式。
+为 InRpa 新增脚本编辑器模块，支持内嵌代码编辑（Monaco Editor）、AI 辅助修改（对话式）、草稿/发布版本管理、草稿热测试，以及一键打开外部编辑器的混合模式。
 
 ## Design Decisions
 

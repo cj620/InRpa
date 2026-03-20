@@ -8,7 +8,7 @@ export default function TitleBar() {
 
   return (
     <div className="titlebar">
-      <div className="titlebar-title">RPA Manager</div>
+      <div className="titlebar-title">InRpa</div>
       <div className="titlebar-controls">
         <button className="titlebar-btn" onClick={handleMinimize}>
           <svg width="12" height="12" viewBox="0 0 12 12"><rect y="5" width="12" height="2" fill="currentColor"/></svg>

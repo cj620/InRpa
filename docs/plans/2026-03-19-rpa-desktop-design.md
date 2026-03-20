@@ -1,4 +1,4 @@
-# RPA Desktop Manager — Design Document
+# InRpa — Design Document
 
 **Date:** 2026-03-19
 
