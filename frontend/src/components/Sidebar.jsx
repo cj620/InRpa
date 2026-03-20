@@ -32,6 +32,27 @@ const navItems = [
   },
 ];
 
+const THEME_CYCLE = ["dark", "light", "cream"];
+const THEME_LABELS = { dark: "暗黑", light: "明亮", cream: "奶油" };
+
+const themeIcons = {
+  dark: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  ),
+  light: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    </svg>
+  ),
+  cream: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 8h1a4 4 0 1 1 0 8h-1" /><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" /><line x1="6" y1="2" x2="6" y2="4" /><line x1="10" y1="2" x2="10" y2="4" /><line x1="14" y1="2" x2="14" y2="4" />
+    </svg>
+  ),
+};
+
 const bottomItems = [
   {
     key: "settings",
@@ -44,8 +65,14 @@ const bottomItems = [
   },
 ];
 
-export default function Sidebar({ activePage, onPageChange }) {
+export default function Sidebar({ activePage, onPageChange, theme, onThemeChange }) {
   const [expanded, setExpanded] = useState(false);
+
+  const cycleTheme = () => {
+    const idx = THEME_CYCLE.indexOf(theme);
+    const next = THEME_CYCLE[(idx + 1) % THEME_CYCLE.length];
+    onThemeChange(next);
+  };
 
   const renderBtn = (item) => (
     <button
@@ -66,6 +93,14 @@ export default function Sidebar({ activePage, onPageChange }) {
       </div>
       <div className="sidebar-bottom">
         {bottomItems.map(renderBtn)}
+        <button
+          className="sidebar-btn sidebar-theme-toggle"
+          onClick={cycleTheme}
+          title={`主题: ${THEME_LABELS[theme]} — 点击切换`}
+        >
+          <span className="sidebar-btn-icon">{themeIcons[theme]}</span>
+          {expanded && <span className="sidebar-btn-label">{THEME_LABELS[theme]}</span>}
+        </button>
         <button
           className="sidebar-btn sidebar-toggle"
           onClick={() => setExpanded((v) => !v)}

@@ -86,6 +86,17 @@
   transition: opacity 0.15s;
 }
 
+/* Theme toggle */
+.sidebar-theme-toggle {
+  color: var(--text-secondary);
+  opacity: 0.7;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+
+.sidebar-theme-toggle:hover {
+  opacity: 1;
+}
+
 /* Toggle button */
 .sidebar-toggle {
   margin-top: 4px;
