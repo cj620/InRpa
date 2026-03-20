@@ -6,7 +6,7 @@
   margin-bottom: 6px;
   cursor: pointer;
   transition: background 0.15s, transform 0.15s;
-  overflow: hidden;
+  overflow: visible;
   position: relative;
 }
 
@@ -19,12 +19,59 @@
   background: var(--bg-hover);
 }
 
+/* Batch selection mode */
+.script-card.is-selectable {
+  overflow: visible;
+}
+
+.script-card.is-batch-selected {
+  background: rgba(108, 92, 231, 0.1);
+}
+
+.script-card.is-batch-selected .script-card-indicator {
+  background: var(--accent);
+  opacity: 1;
+}
+
+/* Checkbox */
+.script-card-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px 0 8px;
+  flex-shrink: 0;
+}
+
+.script-card-checkbox-inner {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1.5px solid var(--text-secondary);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.script-card-checkbox-inner.checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.script-card-checkbox:hover .script-card-checkbox-inner:not(.checked) {
+  border-color: var(--accent-light);
+}
+
+/* Indicator */
 .script-card-indicator {
   width: 3px;
   flex-shrink: 0;
   background: var(--text-secondary);
   opacity: 0.3;
   transition: background 0.3s ease, opacity 0.3s ease;
+  border-radius: 0;
 }
 
 .script-card.selected .script-card-indicator {
@@ -53,8 +100,9 @@
   50% { opacity: 1; }
 }
 
+/* Content area */
 .script-card-content {
-  padding: 10px 12px;
+  padding: 8px 12px;
   flex: 1;
   min-width: 0;
 }
@@ -63,7 +111,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .script-card-name {
@@ -97,6 +145,47 @@
   flex-shrink: 0;
 }
 
+/* Description */
+.script-card-description {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+/* Tags row */
+.script-card-tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 4px;
+  margin-bottom: 4px;
+  overflow: hidden;
+}
+
+.script-card-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  background: rgba(108, 92, 231, 0.12);
+  color: var(--accent-light);
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.script-card-tag:hover {
+  background: rgba(108, 92, 231, 0.24);
+}
+
+/* Meta row */
 .script-card-meta {
   display: flex;
   align-items: center;
@@ -128,12 +217,24 @@
   color: var(--text-secondary);
 }
 
-/* Edit button — hidden by default, shown on hover */
+/* Actions area — holds edit button + menu button side by side */
+.script-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 8px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.script-card:hover .script-card-actions {
+  opacity: 1;
+}
+
+/* Edit button */
 .script-card-edit {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
   width: 28px;
   height: 28px;
   border: none;
@@ -144,17 +245,83 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  transition: opacity 0.15s, background 0.15s, transform 0.15s;
-}
-
-.script-card:hover .script-card-edit {
-  opacity: 1;
+  transition: background 0.15s, transform 0.15s;
+  flex-shrink: 0;
 }
 
 .script-card-edit:hover {
   background: var(--accent-light);
-  transform: translateY(-50%) scale(1.08);
+  transform: scale(1.08);
+}
+
+/* Context menu wrap + button */
+.script-card-menu-wrap {
+  position: relative;
+}
+
+.script-card-menu-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1;
+  padding-bottom: 2px;
+  flex-shrink: 0;
+}
+
+.script-card-menu-btn:hover {
+  background: rgba(108, 92, 231, 0.15);
+  color: var(--accent-light);
+}
+
+/* Dropdown menu */
+.script-card-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 120px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  z-index: 200;
+  animation: menuAppear 0.1s ease;
+}
+
+@keyframes menuAppear {
+  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.script-card-menu-item {
+  display: block;
+  width: 100%;
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  white-space: nowrap;
+}
+
+.script-card-menu-item:hover {
+  background: var(--bg-hover);
+  color: var(--accent-light);
 }
 
 /* Draft script card */
