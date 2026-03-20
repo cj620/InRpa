@@ -22,6 +22,45 @@
   --radius: 8px;
   --nav-width: 48px;
   --list-width: 260px;
+
+  --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+  --scrollbar-hover: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="light"] {
+  --bg-primary: #FFFFFF;
+  --bg-card: #F5F5F7;
+  --bg-hover: #E8E8EC;
+  --bg-terminal: #F0F0F2;
+
+  --accent: #6C5CE7;
+  --accent-light: #5A4BD1;
+
+  --text-primary: #1A1A2E;
+  --text-secondary: #6B6B80;
+
+  --border: rgba(0, 0, 0, 0.08);
+
+  --scrollbar-thumb: rgba(0, 0, 0, 0.15);
+  --scrollbar-hover: rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="cream"] {
+  --bg-primary: #F8F7F5;
+  --bg-card: #EEECEA;
+  --bg-hover: #E5E3E0;
+  --bg-terminal: #EDEAE7;
+
+  --accent: #6C5CE7;
+  --accent-light: #5A4BD1;
+
+  --text-primary: #2C2C2C;
+  --text-secondary: #7A7872;
+
+  --border: rgba(0, 0, 0, 0.06);
+
+  --scrollbar-thumb: rgba(0, 0, 0, 0.1);
+  --scrollbar-hover: rgba(0, 0, 0, 0.18);
 }
 
 * {
@@ -37,6 +76,7 @@ body {
   overflow: hidden;
   -webkit-app-region: no-drag;
   user-select: none;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #root {
@@ -53,10 +93,10 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--scrollbar-thumb, rgba(255, 255, 255, 0.1));
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--scrollbar-hover, rgba(255, 255, 255, 0.2));
 }
