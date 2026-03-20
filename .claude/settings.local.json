@@ -8,7 +8,9 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(python -m pytest tests/test_settings.py::test_theme_in_default_settings tests/test_settings.py::test_update_theme_setting -v)",
-      "Bash(python -m pytest tests/test_settings.py -v)"
+      "Bash(python -m pytest tests/test_settings.py -v)",
+      "Bash(find /c/Users/Administrator/Desktop/AI/rpa-mpv/scripts -type f -name *.py)",
+      "Bash(find /c/Users/Administrator/Desktop/AI/rpa-mpv/tests -type f -name *.py)"
     ]
   }
 }
