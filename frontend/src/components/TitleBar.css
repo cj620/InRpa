@@ -9,6 +9,16 @@
   border-bottom: 1px solid var(--border);
 }
 
+/* macOS: native traffic lights are in top-left, just show minimal title area */
+.titlebar-mac {
+  -webkit-app-region: no-drag;
+  justify-content: center;
+}
+
+.titlebar-mac .titlebar-controls {
+  display: none;
+}
+
 .titlebar-title {
   font-size: 13px;
   font-weight: 600;

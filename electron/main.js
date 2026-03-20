@@ -67,14 +67,23 @@ function waitForPort(port, retries = 30) {
 async function createWindow() {
   const iconPath = path.join(__dirname, "../assets/logo.png");
 
+  // Set dock icon (macOS)
+  if (process.platform === "darwin") {
+    app.dock.setIcon(iconPath);
+  }
+
+  // macOS uses native window frame with traffic lights, Windows uses custom frameless
+  const isMac = process.platform === "darwin";
+
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
     minWidth: 960,
     minHeight: 600,
-    frame: false,
+    frame: isMac, // macOS: native frame with traffic lights; Windows: frameless
     backgroundColor: "#0F1117",
     icon: iconPath,
+    titleBarStyle: isMac ? "hidden" : undefined, // macOS: hide title bar text, show traffic lights
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,

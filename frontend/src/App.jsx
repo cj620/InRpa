@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import TitleBar from "./components/TitleBar";
+
+const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
 import Sidebar from "./components/Sidebar";
 import ScriptList from "./components/ScriptList";
 import FolderTree from "./components/FolderTree";
@@ -254,7 +256,7 @@ export default function App() {
     <SettingsProvider>
       <div className="app">
         <ToastContainer />
-        <TitleBar />
+        <TitleBar isMac={isMac} />
         <div className="app-body">
           <Sidebar
             activePage={activePage}
