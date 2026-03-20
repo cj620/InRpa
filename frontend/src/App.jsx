@@ -7,6 +7,7 @@ import FilesPanel from "./components/FilesPanel";
 import SettingsPanel from "./components/SettingsPanel";
 import EditorPage from "./components/editor/EditorPage";
 import StatusBar from "./components/StatusBar";
+import { ToastContainer } from "./components/Toast";
 import { fetchScripts, runScript, stopScript } from "./api";
 import { useWebSocket } from "./hooks/useWebSocket";
 import "./App.css";
@@ -55,6 +56,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <ToastContainer />
       <TitleBar />
       <div className="app-body">
         <Sidebar activePage={activePage} onPageChange={setActivePage} />

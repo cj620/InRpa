@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useEditor } from "../../hooks/useEditor";
 import { useDraftRunner } from "../../hooks/useDraftRunner";
 import { useAIChat } from "../../hooks/useAIChat";
@@ -9,6 +9,8 @@ import EmptyState from "./EmptyState";
 import SidePanel from "./SidePanel";
 import AIChatPanel from "./AIChatPanel";
 import TestLogPanel from "./TestLogPanel";
+import ConfirmDialog from "../ConfirmDialog";
+import { toast } from "../Toast";
 import "./EditorPage.css";
 
 export default function EditorPage({ scripts, logs, statuses }) {
@@ -17,21 +19,87 @@ export default function EditorPage({ scripts, logs, statuses }) {
   const aiChat = useAIChat();
   const [panelOpen, setPanelOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("ai");
+  const [confirmAction, setConfirmAction] = useState(null);
+  const pendingSwitchRef = useRef(null);
 
   const handleSelectScript = (name) => {
+    if (name === editor.selectedScript) return;
+
+    if (editor.isDirty) {
+      pendingSwitchRef.current = name;
+      setConfirmAction({
+        title: "未保存的修改",
+        message: "当前草稿有未保存的修改，是否保存后再切换？",
+        confirmText: "保存并切换",
+        cancelText: "取消",
+        confirmVariant: "primary",
+        extraAction: {
+          text: "放弃修改",
+          variant: "danger",
+          onClick: () => {
+            setConfirmAction(null);
+            const target = pendingSwitchRef.current;
+            pendingSwitchRef.current = null;
+            editor.loadScript(target);
+          },
+        },
+        onConfirm: async () => {
+          setConfirmAction(null);
+          const target = pendingSwitchRef.current;
+          pendingSwitchRef.current = null;
+          try {
+            await editor.saveDraftAction();
+            toast.success("草稿已保存");
+          } catch {
+            toast.error("保存失败");
+          }
+          editor.loadScript(target);
+        },
+        onCancel: () => {
+          pendingSwitchRef.current = null;
+          setConfirmAction(null);
+        },
+      });
+      return;
+    }
+
     editor.loadScript(name);
   };
 
   const handlePublish = () => {
-    if (window.confirm("确认要将草稿发布到正式版吗？此操作将覆盖当前正式版内容。")) {
-      editor.publishAction();
-    }
+    setConfirmAction({
+      title: "发布到正式版",
+      message: "将草稿覆盖正式版脚本，此操作不可撤销。",
+      confirmText: "发布",
+      cancelText: "取消",
+      confirmVariant: "primary",
+      onConfirm: async () => {
+        setConfirmAction(null);
+        try {
+          await editor.publishAction();
+          toast.success("已发布到正式版");
+        } catch {
+          toast.error("发布失败");
+        }
+      },
+      onCancel: () => setConfirmAction(null),
+    });
   };
 
   const handleDiscard = () => {
-    if (window.confirm("确认要放弃当前草稿吗？未保存的更改将丢失。")) {
-      editor.discardDraft();
-    }
+    setConfirmAction({
+      title: "放弃草稿",
+      message: "将删除当前草稿并恢复到正式版代码，此操作不可撤销。",
+      confirmText: "放弃草稿",
+      cancelText: "取消",
+      confirmVariant: "danger",
+      onConfirm: async () => {
+        setConfirmAction(null);
+        await editor.discardDraft();
+        toast.info("已恢复到正式版");
+      },
+      onCancel: () => setConfirmAction(null),
+    });
   };
 
   const handleSendMessage = useCallback((text) => {
@@ -45,6 +113,47 @@ export default function EditorPage({ scripts, logs, statuses }) {
   const handleTogglePanel = useCallback(() => {
     setPanelOpen((prev) => !prev);
   }, []);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ctrl+S — save draft
+      if (e.ctrlKey && !e.shiftKey && e.key === "s") {
+        e.preventDefault();
+        if (editor.selectedScript && editor.isDirty) {
+          editor.saveDraftAction()
+            .then(() => toast.success("草稿已保存"))
+            .catch(() => toast.error("保存失败"));
+        }
+      }
+      // Ctrl+Shift+A — toggle AI panel
+      if (e.ctrlKey && e.shiftKey && e.key === "A") {
+        e.preventDefault();
+        setPanelOpen((prev) => !prev);
+        setActiveTab("ai");
+      }
+      // Ctrl+Shift+L — toggle test log panel
+      if (e.ctrlKey && e.shiftKey && e.key === "L") {
+        e.preventDefault();
+        setPanelOpen((prev) => !prev);
+        setActiveTab("logs");
+      }
+      // Ctrl+D — toggle diff view
+      if (e.ctrlKey && !e.shiftKey && e.key === "d") {
+        e.preventDefault();
+        editor.toggleDiff();
+      }
+      // Ctrl+Enter — test run
+      if (e.ctrlKey && e.key === "Enter") {
+        e.preventDefault();
+        if (editor.selectedScript) {
+          draftRunner.runTest();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [editor, draftRunner]);
 
   return (
     <div className="editor-page">
@@ -108,6 +217,18 @@ export default function EditorPage({ scripts, logs, statuses }) {
           onPublish={handlePublish}
           onDiscard={handleDiscard}
           selectedScript={editor.selectedScript}
+        />
+      )}
+      {confirmAction && (
+        <ConfirmDialog
+          title={confirmAction.title}
+          message={confirmAction.message}
+          confirmText={confirmAction.confirmText}
+          cancelText={confirmAction.cancelText}
+          confirmVariant={confirmAction.confirmVariant}
+          extraAction={confirmAction.extraAction}
+          onConfirm={confirmAction.onConfirm}
+          onCancel={confirmAction.onCancel}
         />
       )}
     </div>
