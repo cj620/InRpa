@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 
 from backend.scanner import scan_scripts
 from backend.runner import ScriptRunner
+from backend.settings import load_settings, save_settings
 
 SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "scripts")
 
@@ -85,6 +86,18 @@ async def stop_script(name: str):
         return {"message": f"Script '{name}' stopped"}
 
     return JSONResponse(status_code=400, content={"error": f"Script '{name}' is not running"})
+
+
+@app.get("/api/settings")
+async def get_settings():
+    """Return current settings."""
+    return load_settings()
+
+
+@app.put("/api/settings")
+async def update_settings(body: dict):
+    """Update settings (partial merge)."""
+    return save_settings(body)
 
 
 @app.websocket("/ws")
