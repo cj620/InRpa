@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { fetchSettings, updateSettings, testAIConnection } from "../api";
+import React, { useState, useEffect, useRef } from "react";
+import { testAIConnection } from "../api";
+import { useSettings } from "../contexts/SettingsContext";
 import "./SettingsPanel.css";
 
 const PROVIDER_DEFAULTS = {
@@ -140,9 +141,9 @@ function ToggleSwitch({ checked, onChange }) {
 }
 
 export default function SettingsPanel({ theme, onThemeChange }) {
+  const { settings: contextSettings, loading: contextLoading, updateSettings: contextUpdateSettings } = useSettings();
   const [settings, setSettings] = useState(null);
   const [original, setOriginal] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [testState, setTestState] = useState(null); // null | "loading" | "success" | "error"
@@ -151,23 +152,14 @@ export default function SettingsPanel({ theme, onThemeChange }) {
 
   const dirty = settings && original && !deepEqual(settings, original);
 
-  const load = useCallback(async () => {
-    try {
-      const data = await fetchSettings();
-      setSettings(data);
-      setOriginal(data);
-    } catch (err) {
-      console.error("Failed to load settings:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    load();
-  }, [load]);
+    if (contextSettings && !original) {
+      setSettings({ ...contextSettings });
+      setOriginal({ ...contextSettings });
+    }
+  }, [contextSettings, original]);
 
-  if (loading || !settings) {
+  if ((contextLoading && !settings) || !settings) {
     return (
       <div className="settings-panel">
         <div className="sp-loading">加载设置中...</div>
@@ -194,7 +186,7 @@ export default function SettingsPanel({ theme, onThemeChange }) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const data = await updateSettings(settings);
+      const data = await contextUpdateSettings(settings);
       setSettings(data);
       setOriginal(data);
       setToast(true);
