@@ -10,6 +10,7 @@ import StatusBar from "./components/StatusBar";
 import { ToastContainer } from "./components/Toast";
 import { fetchScripts, runScript, stopScript, fetchSettings, updateSettings } from "./api";
 import { useWebSocket } from "./hooks/useWebSocket";
+import { SettingsProvider } from "./contexts/SettingsContext";
 import "./App.css";
 
 export default function App() {
@@ -94,6 +95,7 @@ export default function App() {
   };
 
   return (
+    <SettingsProvider>
     <div className="app">
       <ToastContainer />
       <TitleBar />
@@ -146,7 +148,9 @@ export default function App() {
         connected={connected}
         scripts={scripts}
         statuses={statuses}
+        onNavigate={handlePageChange}
       />
     </div>
+    </SettingsProvider>
   );
 }
