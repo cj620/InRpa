@@ -6,19 +6,26 @@
   flex-direction: column;
   justify-content: space-between;
   padding: 8px 0;
+  transition: width 0.2s ease;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.sidebar-expanded {
+  width: 160px;
 }
 
 .sidebar-top,
 .sidebar-bottom {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: 4px;
+  padding: 0 4px;
 }
 
 .sidebar-btn {
   position: relative;
-  width: 40px;
   height: 40px;
   border: none;
   background: transparent;
@@ -27,8 +34,17 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 10px;
+  padding: 0 10px;
   transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Collapsed mode: center the icon */
+.sidebar:not(.sidebar-expanded) .sidebar-btn {
+  justify-content: center;
+  padding: 0;
 }
 
 .sidebar-btn:hover {
@@ -38,6 +54,7 @@
 
 .sidebar-btn.active {
   color: var(--accent-light);
+  background: rgba(108, 92, 231, 0.08);
 }
 
 .sidebar-btn.active::before {
@@ -46,8 +63,36 @@
   left: -4px;
   top: 50%;
   transform: translateY(-50%);
-  width: 2px;
+  width: 3px;
   height: 20px;
   background: var(--accent);
-  border-radius: 1px;
+  border-radius: 2px;
+}
+
+.sidebar-btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.sidebar-btn-label {
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font-ui);
+  opacity: 1;
+  transition: opacity 0.15s;
+}
+
+/* Toggle button */
+.sidebar-toggle {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.sidebar-toggle:hover {
+  opacity: 1;
 }
