@@ -34,7 +34,7 @@ export default function FilesPanel({ scripts, onEdit }) {
       <div className="files-panel-header">
         <div className="files-panel-title">
           <h3>Script Files</h3>
-          <span className="files-panel-count">{scripts.length} 个脚本</span>
+          <span className="files-panel-count">{scripts.length} 个文件</span>
         </div>
       </div>
       <div className="files-panel-content">
@@ -61,7 +61,7 @@ export default function FilesPanel({ scripts, onEdit }) {
             </thead>
             <tbody>
               {scripts.map((s) => (
-                <tr key={s.name} className="files-row">
+                <tr key={s.name} className={`files-row ${s.is_draft ? "files-row-draft" : ""}`}>
                   <td className="files-name">
                     <span className="files-name-icon">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -71,7 +71,7 @@ export default function FilesPanel({ scripts, onEdit }) {
                     <span className="files-name-text">{s.name}.py</span>
                   </td>
                   <td className="files-status">
-                    {s.has_draft ? (
+                    {s.is_draft ? (
                       <span className="files-draft-badge">
                         <span className="files-draft-dot" />
                         草稿
@@ -86,8 +86,8 @@ export default function FilesPanel({ scripts, onEdit }) {
                   <td className="files-actions">
                     <button
                       className="files-edit-btn"
-                      onClick={() => onEdit?.(s.name)}
-                      title="编辑脚本"
+                      onClick={() => onEdit?.(s.is_draft ? s.parent_name : s.name)}
+                      title={s.is_draft ? "编辑草稿" : "编辑脚本"}
                     >
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />

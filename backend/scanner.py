@@ -7,7 +7,11 @@ from backend.drafts import has_draft as check_has_draft
 
 
 def scan_scripts(directory: str) -> list[dict]:
-    """Scan directory for .py files and return metadata list."""
+    """Scan directory for .py files and return metadata list.
+
+    Returns production scripts and draft scripts as separate entries.
+    Draft scripts have is_draft=True and parent_name pointing to the production script.
+    """
     scripts = []
 
     if not os.path.isdir(directory):
@@ -26,12 +30,22 @@ def scan_scripts(directory: str) -> list[dict]:
             continue
 
         stat = os.stat(filepath)
-        scripts.append({
-            "name": filename[:-3],  # remove .py
+        name = filename[:-3]  # remove .py
+        is_draft = name.endswith("_draft")
+
+        entry = {
+            "name": name,
             "path": filepath,
             "size": stat.st_size,
             "modified_at": datetime.fromtimestamp(stat.st_mtime).isoformat(timespec="seconds"),
-            "has_draft": check_has_draft(directory, filename[:-3]),
-        })
+            "is_draft": is_draft,
+        }
+
+        if is_draft:
+            entry["parent_name"] = name[:-6]  # remove _draft suffix
+        else:
+            entry["has_draft"] = check_has_draft(directory, name)
+
+        scripts.append(entry)
 
     return scripts

@@ -17,7 +17,7 @@ from backend.settings import load_settings, save_settings
 from backend.ai_chat import stream_chat
 from backend.drafts import (
     read_script_content, read_draft, save_draft,
-    delete_draft, publish_draft,
+    delete_draft, publish_draft, get_draft_path,
 )
 
 SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "scripts")
@@ -143,8 +143,7 @@ async def run_draft(name: str):
     if draft_content is None:
         return JSONResponse(status_code=404, content={"error": "No draft found"})
 
-    drafts_dir = os.path.join(SCRIPTS_DIR, ".drafts")
-    draft_path = os.path.join(drafts_dir, f"{name}.py")
+    draft_path = get_draft_path(SCRIPTS_DIR, name)
 
     if runner.get_status(draft_path) == "running":
         return JSONResponse(status_code=409, content={"error": "Draft is already running"})
@@ -165,7 +164,7 @@ async def run_draft(name: str):
 @app.post("/api/scripts/{name}/draft/stop")
 async def stop_draft(name: str):
     """Stop a running draft test."""
-    draft_path = os.path.join(SCRIPTS_DIR, ".drafts", f"{name}.py")
+    draft_path = get_draft_path(SCRIPTS_DIR, name)
     if runner.stop(draft_path):
         return {"message": f"Draft '{name}' stopped"}
     return JSONResponse(status_code=400, content={"error": "Draft is not running"})

@@ -187,3 +187,17 @@
   color: var(--accent-light);
   background: rgba(108, 92, 231, 0.08);
 }
+
+/* Draft row */
+.files-row-draft {
+  opacity: 0.8;
+}
+
+.files-row-draft .files-name-text {
+  color: var(--accent-light);
+}
+
+.files-row-draft .files-name-icon {
+  color: var(--accent);
+  opacity: 0.8;
+}

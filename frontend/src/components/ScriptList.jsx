@@ -41,9 +41,15 @@ export default function ScriptList({
             <ScriptCard
               key={script.name}
               script={script}
-              status={statuses[script.name]}
-              selected={selectedScript === script.name}
-              onClick={() => onSelect(script.name)}
+              status={statuses[script.is_draft ? script.parent_name : script.name]}
+              selected={!script.is_draft && selectedScript === script.name}
+              onClick={() => {
+                if (script.is_draft) {
+                  onEdit?.(script.parent_name);
+                } else {
+                  onSelect(script.name);
+                }
+              }}
               onEdit={onEdit}
             />
           ))

@@ -28,7 +28,7 @@ async def create_browser(headless: bool = False) -> tuple:
         user_agent=config.USER_AGENT,
         viewport=config.VIEWPORT,
         locale="en-US",
-    )
+    ) 
     page = await context.new_page()
     await stealth_async(page)
     page.set_default_timeout(config.PAGE_TIMEOUT)

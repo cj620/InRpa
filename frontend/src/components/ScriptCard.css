@@ -156,3 +156,31 @@
   background: var(--accent-light);
   transform: translateY(-50%) scale(1.08);
 }
+
+/* Draft script card */
+.script-card.is-draft {
+  opacity: 0.85;
+  border-left: 2px solid var(--accent);
+  margin-left: 12px;
+}
+
+.script-card.is-draft .script-card-indicator {
+  background: var(--accent);
+  opacity: 0.5;
+}
+
+.script-card-has-draft-badge {
+  display: inline-flex;
+  padding: 1px 6px;
+  background: rgba(108, 92, 231, 0.08);
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.script-card-status.status-draft {
+  color: var(--accent);
+}
