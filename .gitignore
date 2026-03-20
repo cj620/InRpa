@@ -7,3 +7,4 @@ dist/
 frontend/dist/
 .vite/
 settings.json
+.worktrees/
