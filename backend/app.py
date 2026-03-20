@@ -3,6 +3,7 @@
 import asyncio
 import json
 import os
+import subprocess as sp
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -168,6 +169,19 @@ async def stop_draft(name: str):
     if runner.stop(draft_path):
         return {"message": f"Draft '{name}' stopped"}
     return JSONResponse(status_code=400, content={"error": "Draft is not running"})
+
+
+@app.post("/api/scripts/{name}/open-external")
+async def open_external(name: str):
+    """Open script in system default editor."""
+    script_path = os.path.join(SCRIPTS_DIR, f"{name}.py")
+    if not os.path.isfile(script_path):
+        return JSONResponse(status_code=404, content={"error": f"Script '{name}' not found"})
+    try:
+        os.startfile(script_path)  # Windows
+    except AttributeError:
+        sp.Popen(["xdg-open", script_path])  # Linux
+    return {"message": f"Opened '{name}' in external editor"}
 
 
 @app.post("/api/scripts/{name}/draft/publish")
