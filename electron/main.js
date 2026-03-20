@@ -65,6 +65,8 @@ function waitForPort(port, retries = 30) {
 }
 
 async function createWindow() {
+  const iconPath = path.join(__dirname, "../assets/logo.png");
+
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -72,6 +74,7 @@ async function createWindow() {
     minHeight: 600,
     frame: false,
     backgroundColor: "#0F1117",
+    icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
