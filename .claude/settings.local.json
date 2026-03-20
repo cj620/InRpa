@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(ls -la /c/Users/Administrator/Desktop/AI/rpa-mpv/frontend/src/components/*.css)",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(git stash:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(python -m pytest tests/test_settings.py::test_theme_in_default_settings tests/test_settings.py::test_update_theme_setting -v)",
+      "Bash(python -m pytest tests/test_settings.py -v)"
     ]
   }
 }
