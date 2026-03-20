@@ -1,6 +1,7 @@
 __pycache__/
 output/
 *.png
+!assets/logo.png
 *.pyc
 node_modules/
 dist/
