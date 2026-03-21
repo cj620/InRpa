@@ -13,6 +13,7 @@ import StatusBar from "./components/StatusBar";
 import { ToastContainer } from "./components/Toast";
 import MoveToDialog from "./components/MoveToDialog";
 import EditTagsDialog from "./components/EditTagsDialog";
+import CreateScriptDialog from "./components/CreateScriptDialog";
 import MarketPage from "./components/MarketPage";
 import {
   fetchFolders,
@@ -23,6 +24,7 @@ import {
   moveScriptToFolder, updateScriptMeta,
   syncScripts,
   setCloudUrl,
+  createScript,
 } from "./api";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { SettingsProvider } from "./contexts/SettingsContext";
@@ -48,6 +50,7 @@ export default function App() {
   const [moveDialog, setMoveDialog] = useState(null);   // { scripts: [script] }
   const [tagsDialog, setTagsDialog] = useState(null);   // { script }
   const [descDialog, setDescDialog] = useState(null);   // { script }
+  const [createScriptDialog, setCreateScriptDialog] = useState(null); // null or folders list
 
   // ── Drag state ──────────────────────────────────────────
   const [draggingScript, setDraggingScript] = useState(null);
@@ -264,6 +267,18 @@ export default function App() {
     setDescDialog(null);
   }, [loadFolders, loadScripts]);
 
+  const handleCreateScript = useCallback(async (name, folder) => {
+    try {
+      await createScript(name, folder);
+      await loadFolders();
+      setSelectedScript(name);
+      handleEditScript(name);
+    } catch (err) {
+      console.error("Failed to create script:", err);
+    }
+    setCreateScriptDialog(null);
+  }, [loadFolders]);
+
   // ── Drag & drop ──────────────────────────────────────────
   const handleDragStart = useCallback((script) => {
     setDraggingScript(script);
@@ -335,6 +350,7 @@ export default function App() {
                 onToggleCollapse={() => setFolderTreeCollapsed((v) => !v)}
                 draggingScript={null}
                 onFolderDrop={null}
+                onCreateScript={() => setCreateScriptDialog(folders)}
               />
               <FilesPanel
                 folders={folders}
@@ -407,6 +423,15 @@ export default function App() {
             mode="description"
             onSave={(desc) => handleDescSave(descDialog.script, desc)}
             onCancel={() => setDescDialog(null)}
+          />
+        )}
+
+        {/* Create script dialog */}
+        {createScriptDialog && (
+          <CreateScriptDialog
+            folders={createScriptDialog}
+            onConfirm={handleCreateScript}
+            onCancel={() => setCreateScriptDialog(null)}
           />
         )}
       </div>
