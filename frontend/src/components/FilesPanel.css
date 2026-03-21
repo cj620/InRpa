@@ -249,7 +249,7 @@
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.4);
   min-width: 140px;
-  z-index: 100;
+  z-index: 201;
   overflow: hidden;
   animation: menu-pop 0.1s ease-out;
 }

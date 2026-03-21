@@ -38,6 +38,10 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
   useEffect(() => {
     if (menuOpen === null) return;
     const handler = (e) => {
+      if (e.key === "Escape") {
+        setMenuOpen(null);
+        return;
+      }
       if (
         menuRef.current &&
         !menuRef.current.contains(e.target) &&
@@ -47,7 +51,11 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
       }
     };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("keydown", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", handler);
+    };
   }, [menuOpen]);
 
   const scripts = useMemo(() => {
@@ -162,6 +170,9 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
                       <button
                         ref={menuBtnRef}
                         className="files-menu-btn"
+                        aria-expanded={menuOpen === s.name}
+                        aria-haspopup="true"
+                        aria-controls={menuOpen === s.name ? "menu-actions" : undefined}
                         onClick={(e) => {
                           e.stopPropagation();
                           setMenuOpen(menuOpen === s.name ? null : s.name);
@@ -172,7 +183,7 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
                         ···
                       </button>
                       {menuOpen === s.name && (
-                        <div className="files-menu" ref={menuRef}>
+                        <div id="menu-actions" role="menu" className="files-menu" ref={menuRef}>
                           <button
                             className="files-menu-item"
                             onClick={(e) => {
