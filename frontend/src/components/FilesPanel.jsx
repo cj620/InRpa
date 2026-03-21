@@ -33,7 +33,14 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
   const [menuOpen, setMenuOpen] = useState(null); // null or script name (s.name)
   const menuRef = useRef(null);
   const menuBtnRef = useRef(null);
+  const cancelRef = useRef(null);
   const [activeScript, setActiveScript] = useState(null);
+
+  useEffect(() => {
+    if (selectedScripts.size > 0) {
+      cancelRef.current?.focus();
+    }
+  }, [selectedScripts.size]);
 
   useEffect(() => {
     if (menuOpen === null) return;
@@ -225,19 +232,21 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
         )}
         {selectedScripts.size > 0 && (
           <div className="batch-bar">
-            <span className="batch-bar-count">已选 {selectedScripts.size} 项</span>
+            <span className="batch-bar-count" aria-live="polite" aria-atomic="true">已选 {selectedScripts.size} 项</span>
             <div className="batch-bar-sep" />
-            <button className="batch-bar-btn" onClick={() => {/* TODO: wired in Task 7 */}}>
+            <button type="button" className="batch-bar-btn" onClick={() => {/* TODO: wired in Task 7 */}}>
               移动到...
             </button>
-            <button className="batch-bar-btn" onClick={() => {/* TODO: wired in Task 7 */}}>
+            <button type="button" className="batch-bar-btn" onClick={() => {/* TODO: wired in Task 7 */}}>
               编辑标签
             </button>
-            <button className="batch-bar-btn" onClick={() => {/* TODO: wired in Task 7 */}}>
+            <button type="button" className="batch-bar-btn" onClick={() => {/* TODO: wired in Task 7 */}}>
               编辑描述
             </button>
             <div className="batch-bar-sep" />
             <button
+              ref={cancelRef}
+              type="button"
               className="batch-bar-cancel"
               onClick={() => setSelectedScripts(new Set())}
             >
