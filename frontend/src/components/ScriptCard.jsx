@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import "./ScriptCard.css";
 
 function formatSize(bytes) {
@@ -28,33 +28,12 @@ export default function ScriptCard({
   status,
   selected,
   onClick,
-  onEdit,
   onTagClick,
-  onContextMenu,
   draggable,
   onDragStart,
 }) {
   const isDraft = script.is_draft;
   const statusClass = isDraft ? "idle" : (status || "idle");
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef(null);
-  const menuBtnRef = useRef(null);
-
-  const handleEdit = (e) => {
-    e.stopPropagation();
-    onEdit?.(isDraft ? script.parent_name : script.name);
-  };
-
-  const handleMenuToggle = (e) => {
-    e.stopPropagation();
-    setMenuOpen((prev) => !prev);
-  };
-
-  const handleMenuAction = (e, action) => {
-    e.stopPropagation();
-    setMenuOpen(false);
-    onContextMenu?.(action, script);
-  };
 
   const handleTagClick = (e, tag) => {
     e.stopPropagation();
@@ -65,25 +44,7 @@ export default function ScriptCard({
     onClick?.();
   };
 
-  // Close menu on outside click
-  useEffect(() => {
-    if (!menuOpen) return;
-    const handler = (e) => {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(e.target) &&
-        menuBtnRef.current &&
-        !menuBtnRef.current.contains(e.target)
-      ) {
-        setMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [menuOpen]);
-
   const hasTags = Array.isArray(script.tags) && script.tags.length > 0;
-  const hasDescription = script.description && script.description.trim().length > 0;
 
   return (
     <div
@@ -112,11 +73,6 @@ export default function ScriptCard({
             </span>
           )}
         </div>
-        {hasDescription && (
-          <div className="script-card-description" title={script.description}>
-            {script.description}
-          </div>
-        )}
         {hasTags && (
           <div className="script-card-tags">
             {script.tags.map((tag) => (
@@ -150,47 +106,6 @@ export default function ScriptCard({
                 {formatTime(script.modified_at)}
               </span>
             </>
-          )}
-        </div>
-      </div>
-      <div className="script-card-actions">
-        <button className="script-card-edit" onClick={handleEdit} title={isDraft ? "编辑草稿" : "编辑脚本"}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-          </svg>
-        </button>
-        <div className="script-card-menu-wrap">
-          <button
-            ref={menuBtnRef}
-            className="script-card-menu-btn"
-            onClick={handleMenuToggle}
-            title="更多操作"
-            aria-label="更多操作"
-          >
-            ···
-          </button>
-          {menuOpen && (
-            <div className="script-card-menu" ref={menuRef}>
-              <button
-                className="script-card-menu-item"
-                onClick={(e) => handleMenuAction(e, "move")}
-              >
-                移动到...
-              </button>
-              <button
-                className="script-card-menu-item"
-                onClick={(e) => handleMenuAction(e, "editTags")}
-              >
-                编辑标签
-              </button>
-              <button
-                className="script-card-menu-item"
-                onClick={(e) => handleMenuAction(e, "editDescription")}
-              >
-                编辑描述
-              </button>
-            </div>
           )}
         </div>
       </div>

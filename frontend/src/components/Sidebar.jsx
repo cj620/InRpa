@@ -77,7 +77,7 @@ const bottomItems = [
 ];
 
 export default function Sidebar({ activePage, onPageChange, theme, onThemeChange }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   const cycleTheme = () => {
     const idx = THEME_CYCLE.indexOf(theme);
