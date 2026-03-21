@@ -185,6 +185,7 @@ export default function SettingsPanel({ theme, onThemeChange }) {
     cloudBackend: { status: "idle" },
     aiApi:    { status: "idle" },
   });
+  const [isEnvRefreshing, setIsEnvRefreshing] = useState(false);
 
   const dirty = settings && original && !deepEqual(settings, original);
 
@@ -196,8 +197,9 @@ export default function SettingsPanel({ theme, onThemeChange }) {
     }
   }, [contextSettings, original]);
 
-  useEffect(() => {
+  const runEnvCheck = () => {
     if (!window.electronAPI?.checkEnv) return;
+    setIsEnvRefreshing(true);
     // Set all to checking
     setEnvStatus({
       python: { status: "checking" },
@@ -216,6 +218,7 @@ export default function SettingsPanel({ theme, onThemeChange }) {
         cloudBackend: { status: results.cloudBackend?.ok ? "ok" : "error", statusCode: results.cloudBackend?.status, error: results.cloudBackend?.error },
         aiApi: { status: "idle" },
       });
+      setIsEnvRefreshing(false);
     }).catch(() => {
       setEnvStatus({
         python:   { status: "error", error: "检查失败" },
@@ -225,7 +228,12 @@ export default function SettingsPanel({ theme, onThemeChange }) {
         cloudBackend: { status: "error", error: "检查失败" },
         aiApi:    { status: "idle" },
       });
+      setIsEnvRefreshing(false);
     });
+  };
+
+  useEffect(() => {
+    runEnvCheck();
   }, []);
 
   if ((contextLoading && !settings) || !settings) {
@@ -487,7 +495,18 @@ export default function SettingsPanel({ theme, onThemeChange }) {
 
         {/* Card 4: Runtime Environment */}
         <div className="sp-card">
-          <div className="sp-card-header">运行环境</div>
+          <div className="sp-card-header">
+            运行环境
+            <button
+              type="button"
+              className="sp-refresh-btn"
+              onClick={runEnvCheck}
+              disabled={isEnvRefreshing}
+              title="重新检测"
+            >
+              <RefreshIcon spinning={isEnvRefreshing} />
+            </button>
+          </div>
           {[
             { key: "python",       label: "Python",        getValue: (s) => s.python.status === "ok" ? s.python.version : null },
             { key: "node",         label: "Node.js",        getValue: (s) => s.node.status === "ok" ? s.node.version : null },
