@@ -193,13 +193,7 @@ export default function ScriptList({
                     script={script}
                     status={statuses[script.name]}
                     selected={selectedScript === script.name}
-                    onClick={() => {
-                      if (script.is_draft) {
-                        onEdit?.(script.parent_name);
-                      } else {
-                        onSelect(script.name);
-                      }
-                    }}
+                    onClick={() => onSelect(script.name)}
                     onEdit={onEdit}
                     onTagClick={onTagClick}
                     onContextMenu={onScriptAction}

@@ -18,7 +18,7 @@ import MarketPage from "./components/MarketPage";
 import {
   fetchFolders,
   fetchScripts,
-  runScript, stopScript,
+  runScript, stopScript, runDraft, stopDraft,
   fetchSettings, updateSettings,
   createFolder, renameFolder, deleteFolder,
   moveScriptToFolder, updateScriptMeta,
@@ -160,7 +160,12 @@ export default function App() {
     if (!selectedScript) return;
     try {
       clearLogs(selectedScript);
-      await runScript(selectedScript);
+      if (selectedScript.endsWith("_draft")) {
+        const parentName = selectedScript.slice(0, -6);
+        await runDraft(parentName);
+      } else {
+        await runScript(selectedScript);
+      }
     } catch (err) {
       console.error("Failed to run script:", err);
     }
@@ -169,7 +174,12 @@ export default function App() {
   const handleStop = async () => {
     if (!selectedScript) return;
     try {
-      await stopScript(selectedScript);
+      if (selectedScript.endsWith("_draft")) {
+        const parentName = selectedScript.slice(0, -6);
+        await stopDraft(parentName);
+      } else {
+        await stopScript(selectedScript);
+      }
     } catch (err) {
       console.error("Failed to stop script:", err);
     }
