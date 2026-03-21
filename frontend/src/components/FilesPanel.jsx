@@ -27,11 +27,6 @@ function formatTime(isoString) {
   return d.toLocaleDateString("zh-CN", { year: "numeric", month: "short", day: "numeric" });
 }
 
-function countLines(size) {
-  // Rough estimate: ~40 bytes per line for Python
-  return `~${Math.max(1, Math.round(size / 40))} 行`;
-}
-
 export default function FilesPanel({ folders, selectedFolder, onEdit }) {
   const [selectedScripts, setSelectedScripts] = useState(new Set());
   const [menuOpen, setMenuOpen] = useState(null); // null or script name (s.name)
@@ -130,9 +125,9 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
                   />
                 </th>
                 <th className="files-th-name">文件名</th>
+                <th className="files-th-desc">描述</th>
                 <th className="files-th-status">状态</th>
-                <th className="files-th-size">大小</th>
-                <th className="files-th-lines">行数</th>
+                <th className="files-th-tags">标签</th>
                 <th className="files-th-modified">修改时间</th>
                 <th className="files-th-actions"></th>
               </tr>
@@ -157,13 +152,18 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
                       }}
                     />
                   </td>
-                  <td className="files-name">
-                    <span className="files-name-icon">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
-                      </svg>
+                  <td className="files-name-cell">
+                    <span className="files-name">
+                      <span className="files-name-icon">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
+                        </svg>
+                      </span>
+                      <span className="files-name-text">{s.name}.py</span>
                     </span>
-                    <span className="files-name-text">{s.name}.py</span>
+                  </td>
+                  <td className="files-desc" title={s.description || ""}>
+                    <span className="files-desc-text">{s.description || "—"}</span>
                   </td>
                   <td className="files-status">
                     {s.is_draft ? (
@@ -176,7 +176,18 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
                     )}
                   </td>
                   <td className="files-size">{formatSize(s.size)}</td>
-                  <td className="files-lines">{countLines(s.size)}</td>
+                  <td className="files-tags">
+                    {s.tags && s.tags.length > 0 ? (
+                      <div className="files-tags-list">
+                        {s.tags.slice(0, 3).map((tag) => (
+                          <span key={tag} className="files-tag">{tag}</span>
+                        ))}
+                        {s.tags.length > 3 && <span className="files-tag files-tag-more">+{s.tags.length - 3}</span>}
+                      </div>
+                    ) : (
+                      <span className="files-no-tags">—</span>
+                    )}
+                  </td>
                   <td className="files-date" title={s.modified_at}>{formatTime(s.modified_at)}</td>
                   <td className="files-actions">
                     <button

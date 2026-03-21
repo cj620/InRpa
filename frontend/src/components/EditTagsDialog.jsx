@@ -69,17 +69,14 @@ export default function EditTagsDialog({ script, scriptCount, mode = "tags", all
 
         <div className="edit-dialog-body">
           {isDescription ? (
-            // single description mode only — batch description is hidden
-            scriptCount == null && (
-              <textarea
-                className="edit-dialog-desc"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="脚本描述（可选）"
-                rows={3}
-                autoFocus
-              />
-            )
+            <textarea
+              className="edit-dialog-desc"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="脚本描述（可选）"
+              rows={3}
+              autoFocus
+            />
           ) : (
             // tag mode: single or batch
             <>
