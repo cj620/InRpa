@@ -8,6 +8,7 @@ Port: 8001 (configured in electron/main.js and dev startup).
 import asyncio
 import json
 import os
+import re
 import subprocess as sp
 
 import httpx
@@ -284,6 +285,52 @@ async def ai_chat(body: dict):
     message = body.get("message", "")
     history = body.get("history", [])
     return EventSourceResponse(stream_chat(code, message, history))
+
+
+# ── Script creation ───────────────────────────────────────────────────────────
+
+TEMPLATE_CONTENT = '''def main():
+    pass
+
+
+if __name__ == "__main__":
+    main()
+'''
+
+def _validate_script_name(name: str) -> str | None:
+    """Validate script name. Returns error message or None if valid."""
+    if not name or not name.strip():
+        return "脚本名称不能为空"
+    if not re.match(r'^[\w\u4e00-\u9fff]+$', name):
+        return "脚本名称只能包含字母、数字、下划线、中文"
+    if name.startswith("__"):
+        return "不能使用 __ 开头"
+    return None
+
+
+@app.post("/api/scripts")
+async def create_script(body: dict):
+    """Create a new script file in scripts/ directory.
+
+    Request: { "name": "my_script", "folder": "爬虫" }
+    Response: { "name": "my_script", "folder": "爬虫", "path": "scripts/my_script.py" }
+    """
+    name = (body.get("name") or "").strip()
+    folder = body.get("folder")
+
+    err = _validate_script_name(name)
+    if err:
+        return JSONResponse(status_code=400, content={"error": err})
+
+    script_path = os.path.join(SCRIPTS_DIR, f"{name}.py")
+    os.makedirs(SCRIPTS_DIR, exist_ok=True)
+    try:
+        with open(script_path, "x", encoding="utf-8") as f:
+            f.write(TEMPLATE_CONTENT)
+    except FileExistsError:
+        return JSONResponse(status_code=409, content={"error": f"脚本 '{name}' 已存在"})
+
+    return {"name": name, "folder": folder, "path": script_path}
 
 
 # ── WebSocket ─────────────────────────────────────────────────────────────────
