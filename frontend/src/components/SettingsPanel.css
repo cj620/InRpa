@@ -517,6 +517,45 @@
 .sp-env-dot--checking { color: var(--text-secondary); }
 .sp-env-dot--idle    { color: var(--text-secondary); }
 
+/* ── Refresh Button ─────────────────────────────────────── */
+
+.sp-refresh-btn {
+  position: absolute;
+  right: 0;
+  top: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.sp-refresh-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.sp-refresh-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+@keyframes sp-refresh-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sp-refresh-icon--spinning {
+  animation: sp-refresh-spin 0.8s linear infinite;
+}
+
 .sp-readonly--err {
   color: var(--status-fail);
 }
