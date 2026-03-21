@@ -19,51 +19,6 @@
   background: var(--bg-hover);
 }
 
-/* Batch selection mode */
-.script-card.is-selectable {
-  overflow: visible;
-}
-
-.script-card.is-batch-selected {
-  background: rgba(108, 92, 231, 0.1);
-}
-
-.script-card.is-batch-selected .script-card-indicator {
-  background: var(--accent);
-  opacity: 1;
-}
-
-/* Checkbox */
-.script-card-checkbox {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 6px 0 8px;
-  flex-shrink: 0;
-}
-
-.script-card-checkbox-inner {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  border: 1.5px solid var(--text-secondary);
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: border-color 0.15s, background 0.15s;
-  flex-shrink: 0;
-}
-
-.script-card-checkbox-inner.checked {
-  border-color: var(--accent);
-  background: var(--accent);
-}
-
-.script-card-checkbox:hover .script-card-checkbox-inner:not(.checked) {
-  border-color: var(--accent-light);
-}
-
 /* Indicator */
 .script-card-indicator {
   width: 3px;

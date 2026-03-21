@@ -23,9 +23,6 @@ function formatTime(isoString) {
   return d.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
 }
 
-// Prop note:
-//   selected   — single-selection highlight (from ScriptList); mutually exclusive with isSelected
-//   isSelected — batch-selection state (from batch mode); mutually exclusive with selected
 export default function ScriptCard({
   script,
   status,
@@ -36,9 +33,6 @@ export default function ScriptCard({
   onContextMenu,
   draggable,
   onDragStart,
-  selectable,
-  isSelected,
-  onSelectToggle,
 }) {
   const isDraft = script.is_draft;
   const statusClass = isDraft ? "idle" : (status || "idle");
@@ -68,16 +62,7 @@ export default function ScriptCard({
   };
 
   const handleCardClick = () => {
-    if (selectable) {
-      onSelectToggle?.();
-    } else {
-      onClick?.();
-    }
-  };
-
-  const handleCheckboxClick = (e) => {
-    e.stopPropagation();
-    onSelectToggle?.();
+    onClick?.();
   };
 
   // Close menu on outside click
@@ -102,7 +87,7 @@ export default function ScriptCard({
 
   return (
     <div
-      className={`script-card ${selected ? "selected" : ""} ${isDraft ? "is-draft" : ""} status-${statusClass} ${selectable ? "is-selectable" : ""} ${isSelected ? "is-batch-selected" : ""}`}
+      className={`script-card ${selected ? "selected" : ""} ${isDraft ? "is-draft" : ""} status-${statusClass}`}
       role="button"
       tabIndex={0}
       onClick={handleCardClick}
@@ -110,17 +95,6 @@ export default function ScriptCard({
       draggable={draggable || false}
       onDragStart={onDragStart}
     >
-      {selectable && (
-        <div className="script-card-checkbox" onClick={handleCheckboxClick}>
-          <div className={`script-card-checkbox-inner ${isSelected ? "checked" : ""}`}>
-            {isSelected && (
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                <path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            )}
-          </div>
-        </div>
-      )}
       <div className="script-card-indicator" />
       <div className="script-card-content">
         <div className="script-card-top">
