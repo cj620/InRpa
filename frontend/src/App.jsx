@@ -277,7 +277,7 @@ export default function App() {
       console.error("Failed to create script:", err);
     }
     setCreateScriptDialog(null);
-  }, [loadFolders]);
+  }, [loadFolders, handleEditScript]);
 
   // ── Drag & drop ──────────────────────────────────────────
   const handleDragStart = useCallback((script) => {
