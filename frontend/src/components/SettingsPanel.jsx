@@ -145,6 +145,7 @@ export default function SettingsPanel({ theme, onThemeChange }) {
   const [settings, setSettings] = useState(null);
   const [original, setOriginal] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [cloudUrl, setCloudUrl] = useState("http://localhost:8000");
   const [showKey, setShowKey] = useState(false);
   const [testState, setTestState] = useState(null); // null | "loading" | "success" | "error"
   const [testMsg, setTestMsg] = useState("");
@@ -156,6 +157,7 @@ export default function SettingsPanel({ theme, onThemeChange }) {
     if (contextSettings && !original) {
       setSettings({ ...contextSettings });
       setOriginal({ ...contextSettings });
+      setCloudUrl(contextSettings?.cloud_url || "http://localhost:8000");
     }
   }, [contextSettings, original]);
 
@@ -186,7 +188,7 @@ export default function SettingsPanel({ theme, onThemeChange }) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const data = await contextUpdateSettings(settings);
+      const data = await contextUpdateSettings({ ...settings, cloud_url: cloudUrl });
       setSettings(data);
       setOriginal(data);
       setToast(true);
@@ -231,6 +233,23 @@ export default function SettingsPanel({ theme, onThemeChange }) {
         <h3>设置</h3>
       </div>
       <div className="settings-panel-content">
+        {/* Card 0: Cloud Service */}
+        <div className="sp-card">
+          <div className="sp-card-header">云端服务</div>
+          <div className="sp-field">
+            <label className="sp-label">云端后端地址</label>
+            <input
+              className="sp-input sp-input--mono"
+              type="text"
+              value={cloudUrl}
+              onChange={(e) => setCloudUrl(e.target.value)}
+              placeholder="http://localhost:8000"
+              spellCheck={false}
+            />
+            <p className="sp-hint">开发环境填 http://localhost:8000，生产填云服务器地址</p>
+          </div>
+        </div>
+
         {/* Card 1: AI Model Config */}
         <div className="sp-card">
           <div className="sp-card-header">AI 模型配置</div>
