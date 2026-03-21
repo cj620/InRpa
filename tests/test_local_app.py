@@ -45,22 +45,27 @@ async def test_no_folder_management():
 async def test_create_script():
     """POST /api/scripts should create a .py file with template content."""
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        resp = await client.post("/api/scripts", json={"name": "test_new_script", "folder": "测试"})
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["name"] == "test_new_script"
-    assert data["folder"] == "测试"
-    # Verify file exists
     scripts_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "scripts")
     script_path = os.path.join(scripts_dir, "test_new_script.py")
-    assert os.path.exists(script_path)
-    with open(script_path) as f:
-        content = f.read()
-    assert "def main():" in content
-    assert 'if __name__ == "__main__":' in content
-    # Cleanup
-    os.remove(script_path)
+    # Cleanup before test
+    if os.path.exists(script_path):
+        os.remove(script_path)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            resp = await client.post("/api/scripts", json={"name": "test_new_script", "folder": "测试"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["name"] == "test_new_script"
+        assert data["folder"] == "测试"
+        # Verify file exists
+        assert os.path.exists(script_path)
+        with open(script_path) as f:
+            content = f.read()
+        assert "def main():" in content
+        assert 'if __name__ == "__main__":' in content
+    finally:
+        if os.path.exists(script_path):
+            os.remove(script_path)
 
 
 @pytest.mark.asyncio
@@ -72,15 +77,17 @@ async def test_create_script_duplicate():
     # Ensure clean state
     if os.path.exists(script_path):
         os.remove(script_path)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        # First create
-        await client.post("/api/scripts", json={"name": "dup_test", "folder": "测试"})
-        # Second create - should fail
-        resp = await client.post("/api/scripts", json={"name": "dup_test", "folder": "测试"})
-    assert resp.status_code == 409
-    # Cleanup
-    if os.path.exists(script_path):
-        os.remove(script_path)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            # First create should succeed
+            resp1 = await client.post("/api/scripts", json={"name": "dup_test", "folder": "测试"})
+            assert resp1.status_code == 200
+            # Second create should fail with 409
+            resp2 = await client.post("/api/scripts", json={"name": "dup_test", "folder": "测试"})
+            assert resp2.status_code == 409
+    finally:
+        if os.path.exists(script_path):
+            os.remove(script_path)
 
 
 @pytest.mark.asyncio
