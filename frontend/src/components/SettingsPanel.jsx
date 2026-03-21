@@ -81,17 +81,17 @@ function ChevronIcon() {
   );
 }
 
-function EnvStatusIcon({ status }) {
+function EnvDot({ status }) {
   if (status === "checking") {
-    return <span className="sp-env-spinner"><SpinnerIcon /></span>;
+    return <span className="sp-env-dot sp-env-dot--checking"><SpinnerIcon /></span>;
   }
   if (status === "ok") {
-    return <span className="sp-env-check"><CheckIcon /></span>;
+    return <span className="sp-env-dot sp-env-dot--ok"><CheckIcon /></span>;
   }
   if (status === "error") {
-    return <span className="sp-env-x"><XIcon /></span>;
+    return <span className="sp-env-dot sp-env-dot--err"><XIcon /></span>;
   }
-  return <span className="sp-env-idle">○</span>;
+  return <span className="sp-env-dot sp-env-dot--idle" />;
 }
 
 function CustomSelect({ value, options, onChange }) {
@@ -475,25 +475,29 @@ export default function SettingsPanel({ theme, onThemeChange }) {
         <div className="sp-card">
           <div className="sp-card-header">运行环境</div>
           {[
-            { key: "python",       label: "Python",       value: envStatus.python.version,   extra: null },
-            { key: "node",         label: "Node.js",      value: envStatus.node.version,     extra: null },
-            { key: "venv",         label: ".venv",        value: envStatus.venv.ok ? "正常" : null, extra: null },
-            { key: "playwright",   label: "Playwright",   value: envStatus.playwright.version, extra: envStatus.playwright.chromium },
-            { key: "cloudBackend", label: "云端后端 :8000", value: envStatus.cloudBackend.ok ? `HTTP ${envStatus.cloudBackend.statusCode}` : null, extra: null },
-            { key: "aiApi",        label: "AI API",        value: envStatus.aiApi.status === "ok" ? "正常" : null, extra: null },
-          ].map(({ key, label, value, extra }) => (
-            <div key={key} className="sp-field sp-field--row">
-              <label className="sp-label">{label}</label>
-              <EnvStatusIcon status={envStatus[key].status} />
-              <span className={`sp-env-value ${envStatus[key].status === "error" ? "sp-env-value--error" : ""}`}>
-                {envStatus[key].status === "checking" && "检测中..."}
-                {envStatus[key].status === "idle" && (value || "—")}
-                {envStatus[key].status === "ok" && (value || "正常")}
-                {envStatus[key].status === "error" && (envStatus[key].error || "错误")}
-                {extra && <span style={{ opacity: 0.6 }}> · {extra}</span>}
-              </span>
-            </div>
-          ))}
+            { key: "python",       label: "Python",        getValue: (s) => s.python.status === "ok" ? s.python.version : null },
+            { key: "node",         label: "Node.js",        getValue: (s) => s.node.status === "ok" ? s.node.version : null },
+            { key: "venv",         label: ".venv",          getValue: (s) => s.venv.status === "ok" ? "正常" : null },
+            { key: "playwright",   label: "Playwright",     getValue: (s) => s.playwright.status === "ok" ? s.playwright.version : null, extra: (s) => s.playwright.status === "ok" ? s.playwright.chromium : null },
+            { key: "cloudBackend", label: "云端后端",        getValue: (s) => s.cloudBackend.status === "ok" ? `HTTP ${s.cloudBackend.statusCode}` : null },
+            { key: "aiApi",        label: "AI API",         getValue: (s) => s.aiApi.status === "ok" ? "正常" : null },
+          ].map(({ key, label, getValue, extra }) => {
+            const s = envStatus[key];
+            const value = getValue(envStatus);
+            return (
+              <div key={key} className="sp-field sp-field--row">
+                <span className="sp-label">{label}</span>
+                <span className={`sp-readonly ${s.status === "error" ? "sp-readonly--err" : ""}`}>
+                  <EnvDot status={s.status} />
+                  {s.status === "checking" && "检测中..."}
+                  {s.status === "idle" && (value || "—")}
+                  {s.status === "ok" && (value || "正常")}
+                  {s.status === "error" && (s.error || "错误")}
+                  {extra && s.status === "ok" && <span className="sp-readonly-extra"> · {extra(envStatus)}</span>}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
 

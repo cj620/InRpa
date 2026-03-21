@@ -503,12 +503,25 @@
   transform: translateX(-50%) translateY(0);
 }
 
-/* ── Environment Status ────────────────────────────────── */
+/* ── Environment Dot ───────────────────────────────────── */
 
-.sp-env-spinner { display: inline-flex; margin-right: 6px; color: var(--text-secondary); }
-.sp-env-check   { display: inline-flex; margin-right: 6px; color: var(--accent); }
-.sp-env-x       { display: inline-flex; margin-right: 6px; color: var(--status-fail); }
-.sp-env-idle    { display: inline-block; margin-right: 6px; color: var(--text-secondary); }
+.sp-env-dot {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
 
-.sp-env-value { font-size: 13px; }
-.sp-env-value--error { color: var(--status-fail); }
+.sp-env-dot--ok      { color: var(--status-success); }
+.sp-env-dot--err     { color: var(--status-fail); }
+.sp-env-dot--checking { color: var(--text-secondary); }
+.sp-env-dot--idle    { color: var(--text-secondary); }
+
+.sp-readonly--err {
+  color: var(--status-fail);
+}
+
+.sp-readonly-extra {
+  opacity: 0.6;
+  font-size: 11px;
+}
