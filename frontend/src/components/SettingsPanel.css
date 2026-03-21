@@ -502,3 +502,13 @@
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+
+/* ── Environment Status ────────────────────────────────── */
+
+.sp-env-spinner { display: inline-flex; margin-right: 6px; color: var(--text-secondary); }
+.sp-env-check   { display: inline-flex; margin-right: 6px; color: var(--accent); }
+.sp-env-x       { display: inline-flex; margin-right: 6px; color: var(--error); }
+.sp-env-idle    { display: inline-block; margin-right: 6px; color: var(--text-secondary); }
+
+.sp-env-value { font-size: 13px; }
+.sp-env-value--error { color: var(--error); }
