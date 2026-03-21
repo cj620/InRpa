@@ -33,7 +33,7 @@ function startBackend() {
   });
 }
 
-function waitForPort(port, retries = 30) {
+function waitForPort(port, retries = 60) {
   return new Promise((resolve, reject) => {
     let attempts = 0;
     function tryConnect() {
