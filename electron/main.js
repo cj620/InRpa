@@ -6,13 +6,13 @@ const net = require("net");
 let mainWindow;
 let backendProcess;
 
-const BACKEND_PORT = 8000;
+const BACKEND_PORT = 8001;
 const isDev = !app.isPackaged;
 
 function startBackend() {
   const pythonCmd = process.platform === "win32" ? "python" : "python3";
   backendProcess = spawn(pythonCmd, [
-    "-m", "uvicorn", "backend.app:app",
+    "-m", "uvicorn", "backend.local_app:app",
     "--host", "127.0.0.1",
     "--port", String(BACKEND_PORT),
   ], {
