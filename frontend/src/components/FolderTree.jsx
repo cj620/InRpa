@@ -15,6 +15,7 @@ export default function FolderTree({
   onToggleCollapse,
   draggingScript = null,
   onFolderDrop,
+  onCreateScript,
 }) {
   const [dropTarget, setDropTarget] = useState(null); // folder name being hovered during drag
   const [inlineRename, setInlineRename] = useState(null); // { name: string, value: string }
@@ -288,6 +289,16 @@ export default function FolderTree({
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
               新建文件夹
+            </button>
+            <button
+              className="folder-tree__new-btn folder-tree__new-btn--script"
+              onClick={() => onCreateScript?.()}
+            >
+              <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              新建脚本
             </button>
           </div>
         </>
