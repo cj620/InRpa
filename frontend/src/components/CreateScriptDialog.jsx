@@ -39,8 +39,12 @@ export default function CreateScriptDialog({ folders = [], onConfirm, onCancel }
 
   const handleKeyDown = (e) => {
     if (e.key === "Escape") {
-      onCancel();
-    } else if (e.key === "Enter" && name.trim() && selectedFolder) {
+      if (folderDropdownOpen) {
+        setFolderDropdownOpen(false);
+      } else {
+        onCancel();
+      }
+    } else if (e.key === "Enter" && name.trim() && selectedFolder && !folderDropdownOpen) {
       handleSubmit();
     }
   };
@@ -59,9 +63,10 @@ export default function CreateScriptDialog({ folders = [], onConfirm, onCancel }
 
         <div className="dialog-body">
           <div className="form-field">
-            <label className="form-label">脚本名称</label>
+            <label className="form-label" htmlFor="script-name">脚本名称</label>
             <input
               ref={inputRef}
+              id="script-name"
               className="form-input"
               type="text"
               placeholder="例如: my_scraper"
@@ -72,13 +77,16 @@ export default function CreateScriptDialog({ folders = [], onConfirm, onCancel }
           </div>
 
           <div className="form-field">
-            <label className="form-label">保存到</label>
+            <label className="form-label" htmlFor="folder-select">保存到</label>
             <div className="dropdown-wrap">
               <button
                 ref={dropdownBtnRef}
+                id="folder-select"
                 className={`dropdown-btn ${selectedFolder ? "" : "dropdown-btn--placeholder"}`}
                 onClick={() => setFolderDropdownOpen((v) => !v)}
                 type="button"
+                aria-haspopup="listbox"
+                aria-expanded={folderDropdownOpen}
               >
                 <span className="dropdown-btn-icon">
                   {selectedFolderObj ? (selectedFolderObj.icon || "📁") : "📁"}
@@ -90,7 +98,7 @@ export default function CreateScriptDialog({ folders = [], onConfirm, onCancel }
               </button>
 
               {folderDropdownOpen && (
-                <div ref={dropdownRef} className="dropdown-list">
+                <div ref={dropdownRef} className="dropdown-list" role="listbox">
                   {realFolders.length === 0 ? (
                     <div className="dropdown-empty">还没有创建任何文件夹</div>
                   ) : (
@@ -103,6 +111,7 @@ export default function CreateScriptDialog({ folders = [], onConfirm, onCancel }
                           setFolderDropdownOpen(false);
                         }}
                         type="button"
+                        role="option"
                       >
                         <span className="dropdown-item-icon">{f.icon || "📁"}</span>
                         <span className="dropdown-item-text">{f.name}</span>
