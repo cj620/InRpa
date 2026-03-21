@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
 
   installPlaywright: () => ipcRenderer.invoke("install-playwright"),
   checkPlaywright: () => ipcRenderer.invoke("check-playwright"),
+  checkEnv: () => ipcRenderer.invoke("check-env"),
 
   onPlaywrightInstallOutput: (callback) => {
     const handler = (_event, data) => callback(data);
