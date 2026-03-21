@@ -5,13 +5,13 @@
   "main": "electron/main.js",
   "scripts": {
     "dev:frontend": "cd frontend && npm run dev",
-    "dev:backend:cloud": "python -m uvicorn backend.cloud_app:app --reload --port 8000",
-    "dev:backend:local": "python -m uvicorn backend.local_app:app --reload --port 8001",
+    "dev:backend:cloud": ".venv/bin/python -m uvicorn backend.cloud_app:app --reload --port 8000",
+    "dev:backend:local": ".venv/bin/python -m uvicorn backend.local_app:app --reload --port 8001",
     "dev:electron": "electron .",
     "dev": "concurrently \"npm run dev:backend:cloud\" \"npm run dev:backend:local\" \"npm run dev:frontend\" \"npm run dev:electron\""
   },
   "devDependencies": {
     "concurrently": "^9.0.0",
-    "electron": "^33.4.11"
+    "electron": "^24.1.0"
   }
 }
