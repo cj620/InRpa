@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import "./FilesPanel.css";
 
 function formatSize(bytes) {
@@ -30,6 +30,25 @@ function countLines(size) {
 
 export default function FilesPanel({ folders, selectedFolder, onEdit }) {
   const [selectedScripts, setSelectedScripts] = useState(new Set());
+  const [menuOpen, setMenuOpen] = useState(null); // null or script name (s.name)
+  const menuRef = useRef(null);
+  const menuBtnRef = useRef(null);
+  const [activeScript, setActiveScript] = useState(null);
+
+  useEffect(() => {
+    if (menuOpen === null) return;
+    const handler = (e) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target) &&
+        !(menuBtnRef.current && menuBtnRef.current.contains(e.target))
+      ) {
+        setMenuOpen(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen]);
 
   const scripts = useMemo(() => {
     if (!selectedFolder || selectedFolder === "all") {
@@ -139,6 +158,54 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
                       </svg>
                       编辑
                     </button>
+                    <div className="files-menu-wrap">
+                      <button
+                        ref={menuBtnRef}
+                        className="files-menu-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMenuOpen(menuOpen === s.name ? null : s.name);
+                          setActiveScript(s);
+                        }}
+                        title="更多操作"
+                      >
+                        ···
+                      </button>
+                      {menuOpen === s.name && (
+                        <div className="files-menu" ref={menuRef}>
+                          <button
+                            className="files-menu-item"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setMenuOpen(null);
+                              // TODO: trigger move modal (wired in Task 7)
+                            }}
+                          >
+                            移动到...
+                          </button>
+                          <button
+                            className="files-menu-item"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setMenuOpen(null);
+                              // TODO: trigger tag modal (wired in Task 7)
+                            }}
+                          >
+                            编辑标签
+                          </button>
+                          <button
+                            className="files-menu-item"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setMenuOpen(null);
+                              // TODO: trigger description modal (wired in Task 7)
+                            }}
+                          >
+                            编辑描述
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
