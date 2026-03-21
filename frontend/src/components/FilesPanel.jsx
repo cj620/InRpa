@@ -223,6 +223,28 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
             </tbody>
           </table>
         )}
+        {selectedScripts.size > 0 && (
+          <div className="batch-bar">
+            <span className="batch-bar-count">已选 {selectedScripts.size} 项</span>
+            <div className="batch-bar-sep" />
+            <button className="batch-bar-btn" onClick={() => {/* TODO: wired in Task 7 */}}>
+              移动到...
+            </button>
+            <button className="batch-bar-btn" onClick={() => {/* TODO: wired in Task 7 */}}>
+              编辑标签
+            </button>
+            <button className="batch-bar-btn" onClick={() => {/* TODO: wired in Task 7 */}}>
+              编辑描述
+            </button>
+            <div className="batch-bar-sep" />
+            <button
+              className="batch-bar-cancel"
+              onClick={() => setSelectedScripts(new Set())}
+            >
+              取消
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
