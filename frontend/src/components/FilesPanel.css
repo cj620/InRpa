@@ -272,11 +272,6 @@
   font-size: 11px;
   font-family: var(--font-ui);
   transition: all 0.15s;
-  opacity: 0;
-}
-
-.files-row:hover .files-edit-btn {
-  opacity: 1;
 }
 
 .files-edit-btn:hover {

@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import MoveToDialog from "./MoveToDialog";
 import EditTagsDialog from "./EditTagsDialog";
+import EditMetaDialog from "./EditMetaDialog";
 import { toast } from "./Toast";
-import { moveScriptsBatch, updateScriptsMetaBatch } from "../cloudApi";
+import { moveScriptsBatch, updateScriptsMetaBatch, updateScriptMeta } from "../cloudApi";
 import "./FilesPanel.css";
 
 function formatSize(bytes) {
@@ -36,6 +37,7 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
   const [activeScript, setActiveScript] = useState(null);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [editTagsDialog, setEditTagsDialog] = useState({ open: false, mode: "tags" });
+  const [metaDialogOpen, setMetaDialogOpen] = useState(false);
   const [apiLoading, setApiLoading] = useState(false);
 
   useEffect(() => {
@@ -66,16 +68,6 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
       document.removeEventListener("keydown", handler);
     };
   }, [menuOpen]);
-
-  const openTagModal = (script) => {
-    setActiveScript(script);
-    setEditTagsDialog({ open: true, mode: "tags" });
-  };
-
-  const openDescModal = (script) => {
-    setActiveScript(script);
-    setEditTagsDialog({ open: true, mode: "description" });
-  };
 
   const scripts = useMemo(() => {
     if (!selectedFolder || selectedFolder === "all") {
@@ -127,6 +119,7 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
                 <th className="files-th-name">文件名</th>
                 <th className="files-th-desc">描述</th>
                 <th className="files-th-status">状态</th>
+                <th className="files-th-size">大小</th>
                 <th className="files-th-tags">标签</th>
                 <th className="files-th-modified">修改时间</th>
                 <th className="files-th-actions"></th>
@@ -192,8 +185,8 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
                   <td className="files-actions">
                     <button
                       className="files-edit-btn"
-                      onClick={() => onEdit?.(s.is_draft ? s.parent_name : s.name)}
-                      title={s.is_draft ? "编辑草稿" : "编辑脚本"}
+                      onClick={() => { setActiveScript(s); setMetaDialogOpen(true); }}
+                      title="编辑元信息"
                     >
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -224,31 +217,21 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
                             onClick={(e) => {
                               e.stopPropagation();
                               setMenuOpen(null);
+                              onEdit?.(s.is_draft ? s.parent_name : s.name);
+                            }}
+                          >
+                            编辑脚本
+                          </button>
+                          <button
+                            className="files-menu-item"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setMenuOpen(null);
                               setActiveScript(s);
                               setMoveDialogOpen(true);
                             }}
                           >
                             移动到...
-                          </button>
-                          <button
-                            className="files-menu-item"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setMenuOpen(null);
-                              openTagModal(s);
-                            }}
-                          >
-                            编辑标签
-                          </button>
-                          <button
-                            className="files-menu-item"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setMenuOpen(null);
-                              openDescModal(s);
-                            }}
-                          >
-                            编辑描述
                           </button>
                         </div>
                       )}
@@ -329,6 +312,25 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
             }
           }}
           onCancel={() => setEditTagsDialog({ open: false, mode: "tags" })}
+        />
+      )}
+      {metaDialogOpen && activeScript && (
+        <EditMetaDialog
+          script={activeScript}
+          onSave={async ({ tags, description }) => {
+            setApiLoading(true);
+            try {
+              await updateScriptMeta(activeScript.name, { tags, description });
+              setMetaDialogOpen(false);
+              setActiveScript(null);
+              onRefresh?.();
+            } catch (err) {
+              toast.error("保存失败: " + err.message);
+            } finally {
+              setApiLoading(false);
+            }
+          }}
+          onCancel={() => { setMetaDialogOpen(false); setActiveScript(null); }}
         />
       )}
     </div>
