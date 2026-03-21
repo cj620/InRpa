@@ -195,12 +195,21 @@ export default function SettingsPanel({ theme, onThemeChange }) {
     });
     window.electronAPI.checkEnv().then((results) => {
       setEnvStatus({
-        python:   { status: results.python.ok ? "ok" : "error",   version: results.python.version,   error: results.python.error },
-        node:     { status: results.node.ok ? "ok" : "error",     version: results.node.version,     error: results.node.error },
-        venv:     { status: results.venv.ok ? "ok" : "error",     error: results.venv.error },
+        python:   { status: results.python?.ok ? "ok" : "error",   version: results.python?.version,   error: results.python?.error },
+        node:     { status: results.node?.ok ? "ok" : "error",     version: results.node?.version,     error: results.node?.error },
+        venv:     { status: results.venv?.ok ? "ok" : "error",     error: results.venv?.error },
         playwright: { status: results.playwright?.ok ? "ok" : "error", version: results.playwright?.version, chromium: results.playwright?.chromium, error: results.playwright?.error },
-        cloudBackend: { status: results.cloudBackend.ok ? "ok" : "error", statusCode: results.cloudBackend.status, error: results.cloudBackend.error },
+        cloudBackend: { status: results.cloudBackend?.ok ? "ok" : "error", statusCode: results.cloudBackend?.status, error: results.cloudBackend?.error },
         aiApi: { status: "idle" },
+      });
+    }).catch(() => {
+      setEnvStatus({
+        python:   { status: "error", error: "检查失败" },
+        node:     { status: "error", error: "检查失败" },
+        venv:     { status: "error", error: "检查失败" },
+        playwright: { status: "error", error: "检查失败" },
+        cloudBackend: { status: "error", error: "检查失败" },
+        aiApi:    { status: "idle" },
       });
     });
   }, []);
