@@ -216,10 +216,12 @@ import playwright
 import json
 try:
     from playwright.sync_api import sync_playwright
+    import importlib.metadata
     p = sync_playwright().start()
     chromium_name = p.chromium.name
+    pw_version = importlib.metadata.version("playwright")
     p.stop()
-    print(json.dumps({"ok": True, "version": playwright.__version__, "chromium": chromium_name}))
+    print(json.dumps({"ok": True, "version": pw_version, "chromium": chromium_name}))
 except ImportError:
     print(json.dumps({"ok": False, "error": "Playwright 未安装"}))
 except Exception as e:
