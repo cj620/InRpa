@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import MoveToDialog from "./MoveToDialog";
+import EditTagsDialog from "./EditTagsDialog";
 import "./FilesPanel.css";
 
 function formatSize(bytes) {
@@ -37,6 +38,7 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
   const cancelRef = useRef(null);
   const [activeScript, setActiveScript] = useState(null);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [editTagsDialog, setEditTagsDialog] = useState({ open: false, mode: "tags" });
 
   useEffect(() => {
     if (selectedScripts.size > 0) {
@@ -66,6 +68,16 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
       document.removeEventListener("keydown", handler);
     };
   }, [menuOpen]);
+
+  const openTagModal = (script) => {
+    setActiveScript(script);
+    setEditTagsDialog({ open: true, mode: "tags" });
+  };
+
+  const openDescModal = (script) => {
+    setActiveScript(script);
+    setEditTagsDialog({ open: true, mode: "description" });
+  };
 
   const scripts = useMemo(() => {
     if (!selectedFolder || selectedFolder === "all") {
@@ -209,7 +221,7 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
                             onClick={(e) => {
                               e.stopPropagation();
                               setMenuOpen(null);
-                              // TODO: trigger tag modal (wired in Task 7)
+                              openTagModal(s);
                             }}
                           >
                             编辑标签
@@ -219,7 +231,7 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
                             onClick={(e) => {
                               e.stopPropagation();
                               setMenuOpen(null);
-                              // TODO: trigger description modal (wired in Task 7)
+                              openDescModal(s);
                             }}
                           >
                             编辑描述
@@ -240,10 +252,10 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
             <button type="button" className="batch-bar-btn" onClick={() => { setActiveScript(null); setMoveDialogOpen(true); }}>
               移动到...
             </button>
-            <button type="button" className="batch-bar-btn" onClick={() => {/* TODO: wired in Task 7 */}}>
+            <button type="button" className="batch-bar-btn" onClick={() => { setActiveScript(null); setEditTagsDialog({ open: true, mode: "tags" }); }}>
               编辑标签
             </button>
-            <button type="button" className="batch-bar-btn" onClick={() => {/* TODO: wired in Task 7 */}}>
+            <button type="button" className="batch-bar-btn" onClick={() => { setActiveScript(null); setEditTagsDialog({ open: true, mode: "description" }); }}>
               编辑描述
             </button>
             <div className="batch-bar-sep" />
@@ -267,6 +279,18 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
             // TODO: wire API call in Task 10
           }}
           onCancel={() => setMoveDialogOpen(false)}
+        />
+      )}
+      {editTagsDialog.open && (
+        <EditTagsDialog
+          script={activeScript}
+          scriptCount={activeScript ? 1 : selectedScripts.size}
+          mode={editTagsDialog.mode}
+          onSave={(value) => {
+            setEditTagsDialog({ open: false, mode: "tags" });
+            // TODO: wire API in Task 10
+          }}
+          onCancel={() => setEditTagsDialog({ open: false, mode: "tags" })}
         />
       )}
     </div>
