@@ -257,42 +257,6 @@
   background: rgba(255, 107, 107, 0.1);
 }
 
-/* ─── Footer / new folder button ─────────────────────────── */
-.folder-tree__footer {
-  padding: 8px;
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.folder-tree__new-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  height: 30px;
-  padding: 0 10px;
-  background: transparent;
-  border: 1px dashed var(--border);
-  border-radius: 6px;
-  color: var(--text-secondary);
-  font-family: var(--font-ui);
-  font-size: 12px;
-  cursor: pointer;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
-  white-space: nowrap;
-}
-
-.folder-tree__new-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent-light);
-  background: rgba(108, 92, 231, 0.05); /* tint of --accent */
-}
-
-.folder-tree__new-btn svg {
-  flex-shrink: 0;
-  opacity: 0.8;
-}
-
 /* ─── Footer / new buttons ──────────────────────────── */
 .folder-tree__footer {
   display: flex;
