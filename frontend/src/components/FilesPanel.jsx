@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import MoveToDialog from "./MoveToDialog";
 import EditTagsDialog from "./EditTagsDialog";
+import { toast } from "./Toast";
 import { moveScriptsBatch, updateScriptsMetaBatch } from "../cloudApi";
 import "./FilesPanel.css";
 
@@ -276,7 +277,6 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
         <MoveToDialog
           folders={folders}
           scriptCount={activeScript ? 1 : selectedScripts.size}
-          loading={apiLoading}
           onConfirm={async (targetFolder) => {
             setApiLoading(true);
             try {
@@ -286,7 +286,7 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
               setSelectedScripts(new Set());
               onRefresh?.();
             } catch (err) {
-              alert("移动失败: " + err.message);
+              toast.error("移动失败: " + err.message);
             } finally {
               setApiLoading(false);
             }
@@ -299,7 +299,6 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
           script={activeScript}
           scriptCount={activeScript ? 1 : selectedScripts.size}
           mode={editTagsDialog.mode}
-          loading={apiLoading}
           onSave={async (value) => {
             setApiLoading(true);
             try {
@@ -313,7 +312,7 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
               setSelectedScripts(new Set());
               onRefresh?.();
             } catch (err) {
-              alert("保存失败: " + err.message);
+              toast.error("保存失败: " + err.message);
             } finally {
               setApiLoading(false);
             }

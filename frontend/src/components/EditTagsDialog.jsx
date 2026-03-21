@@ -122,10 +122,10 @@ export default function EditTagsDialog({ script, scriptCount, mode = "tags", all
         </div>
 
         <div className="dialog-footer">
-          <button className="dialog-btn dialog-btn--cancel" onClick={onCancel}>
+          <button type="button" className="dialog-btn dialog-btn--cancel" onClick={onCancel}>
             取消
           </button>
-          <button className="dialog-btn dialog-btn--confirm" onClick={handleSave}>
+          <button type="button" className="dialog-btn dialog-btn--confirm" onClick={handleSave}>
             保存
           </button>
         </div>
