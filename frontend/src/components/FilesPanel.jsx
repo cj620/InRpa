@@ -1,4 +1,8 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
+import MoveToDialog from "./MoveToDialog";
+import EditTagsDialog from "./EditTagsDialog";
+import { toast } from "./Toast";
+import { moveScriptsBatch, updateScriptsMetaBatch } from "../cloudApi";
 import "./FilesPanel.css";
 
 function formatSize(bytes) {
@@ -29,6 +33,55 @@ function countLines(size) {
 }
 
 export default function FilesPanel({ folders, selectedFolder, onEdit }) {
+  const [selectedScripts, setSelectedScripts] = useState(new Set());
+  const [menuOpen, setMenuOpen] = useState(null); // null or script name (s.name)
+  const menuRef = useRef(null);
+  const menuBtnRef = useRef(null);
+  const cancelRef = useRef(null);
+  const [activeScript, setActiveScript] = useState(null);
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [editTagsDialog, setEditTagsDialog] = useState({ open: false, mode: "tags" });
+  const [apiLoading, setApiLoading] = useState(false);
+
+  useEffect(() => {
+    if (selectedScripts.size > 0) {
+      cancelRef.current?.focus();
+    }
+  }, [selectedScripts.size]);
+
+  useEffect(() => {
+    if (menuOpen === null) return;
+    const handler = (e) => {
+      if (e.key === "Escape") {
+        setMenuOpen(null);
+        return;
+      }
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target) &&
+        !(menuBtnRef.current && menuBtnRef.current.contains(e.target))
+      ) {
+        setMenuOpen(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("keydown", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", handler);
+    };
+  }, [menuOpen]);
+
+  const openTagModal = (script) => {
+    setActiveScript(script);
+    setEditTagsDialog({ open: true, mode: "tags" });
+  };
+
+  const openDescModal = (script) => {
+    setActiveScript(script);
+    setEditTagsDialog({ open: true, mode: "description" });
+  };
+
   const scripts = useMemo(() => {
     if (!selectedFolder || selectedFolder === "all") {
       return (folders || []).flatMap((f) => f.scripts || []);
@@ -61,6 +114,21 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
           <table className="files-table">
             <thead>
               <tr>
+                <th className="files-th-check" style={{ width: 40 }}>
+                  <input
+                    type="checkbox"
+                    className="files-checkbox"
+                    aria-label="全选所有文件"
+                    checked={scripts.length > 0 && selectedScripts.size === scripts.length}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedScripts(new Set(scripts.map((s) => s.name)));
+                      } else {
+                        setSelectedScripts(new Set());
+                      }
+                    }}
+                  />
+                </th>
                 <th className="files-th-name">文件名</th>
                 <th className="files-th-status">状态</th>
                 <th className="files-th-size">大小</th>
@@ -72,6 +140,23 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
             <tbody>
               {scripts.map((s) => (
                 <tr key={s.name} className={`files-row ${s.is_draft ? "files-row-draft" : ""}`}>
+                  <td className="files-check">
+                    <input
+                      type="checkbox"
+                      className="files-checkbox"
+                      aria-label={`选择文件 ${s.name}`}
+                      checked={selectedScripts.has(s.name)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        setSelectedScripts((prev) => {
+                          const next = new Set(prev);
+                          if (e.target.checked) next.add(s.name);
+                          else next.delete(s.name);
+                          return next;
+                        });
+                      }}
+                    />
+                  </td>
                   <td className="files-name">
                     <span className="files-name-icon">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -105,13 +190,136 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
                       </svg>
                       编辑
                     </button>
+                    <div className="files-menu-wrap">
+                      <button
+                        ref={menuBtnRef}
+                        className="files-menu-btn"
+                        aria-expanded={menuOpen === s.name}
+                        aria-haspopup="true"
+                        aria-controls={menuOpen === s.name ? "menu-actions" : undefined}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMenuOpen(menuOpen === s.name ? null : s.name);
+                          setActiveScript(s);
+                        }}
+                        title="更多操作"
+                      >
+                        ···
+                      </button>
+                      {menuOpen === s.name && (
+                        <div id="menu-actions" role="menu" className="files-menu" ref={menuRef}>
+                          <button
+                            className="files-menu-item"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setMenuOpen(null);
+                              setActiveScript(s);
+                              setMoveDialogOpen(true);
+                            }}
+                          >
+                            移动到...
+                          </button>
+                          <button
+                            className="files-menu-item"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setMenuOpen(null);
+                              openTagModal(s);
+                            }}
+                          >
+                            编辑标签
+                          </button>
+                          <button
+                            className="files-menu-item"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setMenuOpen(null);
+                              openDescModal(s);
+                            }}
+                          >
+                            编辑描述
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
+        {selectedScripts.size > 0 && (
+          <div className="batch-bar">
+            <span className="batch-bar-count" aria-live="polite" aria-atomic="true">已选 {selectedScripts.size} 项</span>
+            <div className="batch-bar-sep" />
+            <button type="button" className="batch-bar-btn" onClick={() => { setActiveScript(null); setMoveDialogOpen(true); }}>
+              移动到...
+            </button>
+            <button type="button" className="batch-bar-btn" onClick={() => { setActiveScript(null); setEditTagsDialog({ open: true, mode: "tags" }); }}>
+              编辑标签
+            </button>
+            <button type="button" className="batch-bar-btn" onClick={() => { setActiveScript(null); setEditTagsDialog({ open: true, mode: "description" }); }}>
+              编辑描述
+            </button>
+            <div className="batch-bar-sep" />
+            <button
+              ref={cancelRef}
+              type="button"
+              className="batch-bar-cancel"
+              onClick={() => setSelectedScripts(new Set())}
+            >
+              取消
+            </button>
+          </div>
+        )}
       </div>
+      {moveDialogOpen && (
+        <MoveToDialog
+          folders={folders}
+          scriptCount={activeScript ? 1 : selectedScripts.size}
+          onConfirm={async (targetFolder) => {
+            setApiLoading(true);
+            try {
+              const scriptNames = activeScript ? [activeScript.name] : Array.from(selectedScripts);
+              await moveScriptsBatch(scriptNames, targetFolder);
+              setMoveDialogOpen(false);
+              setSelectedScripts(new Set());
+              onRefresh?.();
+            } catch (err) {
+              toast.error("移动失败: " + err.message);
+            } finally {
+              setApiLoading(false);
+            }
+          }}
+          onCancel={() => setMoveDialogOpen(false)}
+        />
+      )}
+      {editTagsDialog.open && (
+        <EditTagsDialog
+          script={activeScript}
+          scriptCount={activeScript ? 1 : selectedScripts.size}
+          mode={editTagsDialog.mode}
+          onSave={async (value) => {
+            setApiLoading(true);
+            try {
+              const scriptNames = activeScript ? [activeScript.name] : Array.from(selectedScripts);
+              if (editTagsDialog.mode === "tags") {
+                await updateScriptsMetaBatch(scriptNames, { tags: value });
+              } else {
+                await updateScriptsMetaBatch(scriptNames, { description: value });
+              }
+              setEditTagsDialog({ open: false, mode: "tags" });
+              setSelectedScripts(new Set());
+              onRefresh?.();
+            } catch (err) {
+              toast.error("保存失败: " + err.message);
+            } finally {
+              setApiLoading(false);
+            }
+          }}
+          onCancel={() => setEditTagsDialog({ open: false, mode: "tags" })}
+        />
+      )}
     </div>
   );
 }

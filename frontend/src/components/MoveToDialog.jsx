@@ -53,10 +53,11 @@ export default function MoveToDialog({ folders = [], scriptCount = 1, onConfirm,
         </div>
 
         <div className="dialog-footer">
-          <button className="dialog-btn dialog-btn--cancel" onClick={onCancel}>
+          <button type="button" className="dialog-btn dialog-btn--cancel" onClick={onCancel}>
             取消
           </button>
           <button
+            type="button"
             className="dialog-btn dialog-btn--confirm"
             disabled={selected === null}
             onClick={() => selected !== null && onConfirm(selected)}
