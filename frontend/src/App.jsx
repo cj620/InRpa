@@ -21,6 +21,8 @@ import {
   fetchSettings, updateSettings,
   createFolder, renameFolder, deleteFolder,
   moveScriptToFolder, updateScriptMeta,
+  syncScripts,
+  setCloudUrl,
 } from "./api";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { SettingsProvider } from "./contexts/SettingsContext";
@@ -53,6 +55,10 @@ export default function App() {
   // ── WebSocket ───────────────────────────────────────────
   const { connected, logs, statuses, clearLogs } = useWebSocket();
 
+  // ── Sync ────────────────────────────────────────────────
+  const [syncStatus, setSyncStatus] = useState("idle"); // "idle"|"syncing"|"ok"|"offline"
+  const [syncMessage, setSyncMessage] = useState("");
+
   // ── Derived: all unique tags ────────────────────────────
   const allTags = React.useMemo(() => {
     const tagSet = new Set();
@@ -74,9 +80,34 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    fetchSettings().then((data) => {
+    fetchSettings().then(async (data) => {
       if (data?.theme) setTheme(data.theme);
-    }).catch(() => {});
+
+      const cloudUrl = data?.cloud_url || "http://localhost:8000";
+      setCloudUrl(cloudUrl);
+
+      // Sync scripts from cloud at startup
+      setSyncStatus("syncing");
+      try {
+        const result = await syncScripts(cloudUrl);
+        if (result.using_cache) {
+          setSyncStatus("offline");
+          setSyncMessage("云端不可达，使用本地缓存");
+        } else {
+          setSyncStatus("ok");
+          setSyncMessage(`已同步 ${result.synced}/${result.total} 个脚本`);
+        }
+      } catch {
+        setSyncStatus("offline");
+        setSyncMessage("同步失败，使用本地缓存");
+      }
+
+      // Reload script list after sync
+      loadFolders();
+    }).catch(() => {
+      setSyncStatus("offline");
+      setSyncMessage("本地服务不可达");
+    });
   }, []);
 
   const handleThemeChange = useCallback((newTheme) => {
@@ -345,6 +376,8 @@ export default function App() {
           scripts={allScripts}
           statuses={statuses}
           onNavigate={handlePageChange}
+          syncStatus={syncStatus}
+          syncMessage={syncMessage}
         />
 
         {/* Move-to-folder dialog */}
