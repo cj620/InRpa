@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import MoveToDialog from "./MoveToDialog";
 import EditTagsDialog from "./EditTagsDialog";
+import { moveScriptsBatch, updateScriptsMetaBatch } from "../cloudApi";
 import "./FilesPanel.css";
 
 function formatSize(bytes) {
@@ -39,6 +40,7 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
   const [activeScript, setActiveScript] = useState(null);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [editTagsDialog, setEditTagsDialog] = useState({ open: false, mode: "tags" });
+  const [apiLoading, setApiLoading] = useState(false);
 
   useEffect(() => {
     if (selectedScripts.size > 0) {
@@ -274,9 +276,20 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
         <MoveToDialog
           folders={folders}
           scriptCount={activeScript ? 1 : selectedScripts.size}
+          loading={apiLoading}
           onConfirm={async (targetFolder) => {
-            setMoveDialogOpen(false);
-            // TODO: wire API call in Task 10
+            setApiLoading(true);
+            try {
+              const scriptNames = activeScript ? [activeScript.name] : Array.from(selectedScripts);
+              await moveScriptsBatch(scriptNames, targetFolder);
+              setMoveDialogOpen(false);
+              setSelectedScripts(new Set());
+              onRefresh?.();
+            } catch (err) {
+              alert("移动失败: " + err.message);
+            } finally {
+              setApiLoading(false);
+            }
           }}
           onCancel={() => setMoveDialogOpen(false)}
         />
@@ -286,9 +299,24 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
           script={activeScript}
           scriptCount={activeScript ? 1 : selectedScripts.size}
           mode={editTagsDialog.mode}
-          onSave={(value) => {
-            setEditTagsDialog({ open: false, mode: "tags" });
-            // TODO: wire API in Task 10
+          loading={apiLoading}
+          onSave={async (value) => {
+            setApiLoading(true);
+            try {
+              const scriptNames = activeScript ? [activeScript.name] : Array.from(selectedScripts);
+              if (editTagsDialog.mode === "tags") {
+                await updateScriptsMetaBatch(scriptNames, { tags: value });
+              } else {
+                await updateScriptsMetaBatch(scriptNames, { description: value });
+              }
+              setEditTagsDialog({ open: false, mode: "tags" });
+              setSelectedScripts(new Set());
+              onRefresh?.();
+            } catch (err) {
+              alert("保存失败: " + err.message);
+            } finally {
+              setApiLoading(false);
+            }
           }}
           onCancel={() => setEditTagsDialog({ open: false, mode: "tags" })}
         />
