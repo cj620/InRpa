@@ -78,3 +78,7 @@
   background: var(--status-success);
   opacity: 1;
 }
+
+.statusbar-syncing { color: var(--accent, #6C5CE7); }
+.statusbar-offline { color: #e17055; }
+.statusbar-synced  { color: #00b894; }

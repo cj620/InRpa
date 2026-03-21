@@ -2,7 +2,7 @@ import React from "react";
 import { useSettings } from "../contexts/SettingsContext";
 import "./StatusBar.css";
 
-export default function StatusBar({ connected, scripts, statuses, onNavigate }) {
+export default function StatusBar({ connected, scripts, statuses, onNavigate, syncStatus, syncMessage }) {
   const { settings } = useSettings();
   const runningCount = Object.values(statuses).filter((s) => s === "running").length;
 
@@ -17,6 +17,24 @@ export default function StatusBar({ connected, scripts, statuses, onNavigate }) 
         <span className="statusbar-text">
           {connected ? "Connected" : "Disconnected"}
         </span>
+        {syncStatus === "syncing" && (
+          <>
+            <span className="statusbar-separator" />
+            <span className="statusbar-text statusbar-syncing">⟳ 同步中...</span>
+          </>
+        )}
+        {syncStatus === "offline" && (
+          <>
+            <span className="statusbar-separator" />
+            <span className="statusbar-text statusbar-offline" title={syncMessage}>本地缓存</span>
+          </>
+        )}
+        {syncStatus === "ok" && syncMessage && (
+          <>
+            <span className="statusbar-separator" />
+            <span className="statusbar-text statusbar-synced" title={syncMessage}>✓ 已同步</span>
+          </>
+        )}
         <span className="statusbar-separator" />
         <span
           className="statusbar-ai"
