@@ -23,7 +23,8 @@ DEFAULT_SETTINGS = {
         "word_wrap": True
     },
     "scripts_dir": "./scripts",
-    "theme": "dark"
+    "theme": "dark",
+    "cloud_url": "http://localhost:8000"
 }
 
 
