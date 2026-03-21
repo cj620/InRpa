@@ -156,6 +156,102 @@ print(json.dumps(info))
     });
   });
 
+  // Environment status check
+  ipcMain.handle("check-env", async () => {
+    const baseDir = path.join(__dirname, "..");
+    const venvPython = process.platform === "win32"
+      ? path.join(baseDir, ".venv", "Scripts", "python.exe")
+      : path.join(baseDir, ".venv", "bin", "python3");
+
+    const results = {};
+
+    // Helper: run command and return stdout trimmed
+    function runCmd(args) {
+      return new Promise((resolve) => {
+        const proc = spawn(args[0], args.slice(1), {
+          cwd: baseDir,
+          stdio: ["pipe", "pipe", "pipe"],
+        });
+        let stdout = "";
+        let stderr = "";
+        proc.stdout.on("data", (d) => { stdout += d.toString(); });
+        proc.stderr.on("data", (d) => { stderr += d.toString(); });
+        proc.on("close", (code) => resolve({ code, stdout: stdout.trim(), stderr: stderr.trim() }));
+        proc.on("error", (err) => resolve({ code: -1, stdout: "", stderr: err.message }));
+      });
+    }
+
+    // 1. Python version
+    try {
+      const py = await runCmd([venvPython, "--version"]);
+      if (py.code === 0) {
+        const match = py.stdout.match(/Python (\d+\.\d+\.\d+)/);
+        results.python = { ok: true, version: match ? match[1] : py.stdout };
+      } else {
+        results.python = { ok: false, error: "Python not found" };
+      }
+    } catch { results.python = { ok: false, error: "Failed" }; }
+
+    // 2. Node version
+    try {
+      const node = await runCmd(["node", "--version"]);
+      if (node.code === 0) {
+        results.node = { ok: true, version: node.stdout.replace("v", "") };
+      } else {
+        results.node = { ok: false, error: "Node not found" };
+      }
+    } catch { results.node = { ok: false, error: "Failed" }; }
+
+    // 3. .venv exists and python executable works
+    try {
+      const venvTest = await runCmd([venvPython, "-c", "print('ok')"]);
+      results.venv = { ok: venvTest.code === 0 && venvTest.stdout === "ok" };
+      if (!results.venv.ok) results.venv.error = "venv python not executable";
+    } catch { results.venv = { ok: false, error: "Failed" }; }
+
+    // 4. Playwright
+    try {
+      const pwScript = `
+from playwright.sync_api import sync_playwright
+import json
+try:
+    p = sync_playwright().start()
+    info = {"version": p._playwright.version, "chromium": p.chromium.name}
+    p.stop()
+    print(json.dumps({"ok": True, **info}))
+except Exception as e:
+    print(json.dumps({"ok": False, "error": str(e)}))
+`;
+      const pw = await runCmd([venvPython, "-c", pwScript]);
+      if (pw.code === 0) {
+        try {
+          const pwInfo = JSON.parse(pw.stdout);
+          results.playwright = pwInfo;
+        } catch {
+          results.playwright = { ok: false, error: "Parse error" };
+        }
+      } else {
+        results.playwright = { ok: false, error: pw.stderr || "Failed" };
+      }
+    } catch { results.playwright = { ok: false, error: "Failed" }; }
+
+    // 5. Cloud backend connectivity
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    try {
+      const resp = await fetch("http://localhost:8000/health", {
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      results.cloudBackend = { ok: resp.ok, status: resp.status };
+    } catch (e) {
+      clearTimeout(timeout);
+      results.cloudBackend = { ok: false, error: e.name === "AbortError" ? "Timeout" : e.message };
+    }
+
+    return results;
+  });
+
   // Install Playwright IPC handler
   ipcMain.handle("install-playwright", async () => {
     return new Promise((resolve) => {
