@@ -111,15 +111,58 @@ async function createWindow() {
   });
   ipcMain.on("window-close", () => mainWindow.close());
 
+  // Check Playwright installation status
+  ipcMain.handle("check-playwright", async () => {
+    return new Promise((resolve) => {
+      const baseDir = path.join(__dirname, "..");
+      const venvPython = process.platform === "win32"
+        ? path.join(baseDir, ".venv", "Scripts", "python.exe")
+        : path.join(baseDir, ".venv", "bin", "python3");
+
+      const script = `
+import json
+from playwright.sync_api import sync_playwright
+p = sync_playwright().start()
+chromium = p.chromium
+info = {
+    "version": p._playwright.version,
+    "chromium": chromium.name
+}
+p.stop()
+print(json.dumps(info))
+`;
+      const proc = spawn(venvPython, ["-c", script], {
+        cwd: baseDir,
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+
+      let stdout = "";
+      let stderr = "";
+      proc.stdout.on("data", (data) => { stdout += data.toString(); });
+      proc.stderr.on("data", (data) => { stderr += data.toString(); });
+      proc.on("close", (code) => {
+        if (code === 0) {
+          try {
+            const info = JSON.parse(stdout.trim());
+            resolve({ installed: true, version: info.version, chromium: info.chromium });
+          } catch {
+            resolve({ installed: false });
+          }
+        } else {
+          resolve({ installed: false });
+        }
+      });
+      proc.on("error", () => resolve({ installed: false }));
+    });
+  });
+
   // Install Playwright IPC handler
   ipcMain.handle("install-playwright", async () => {
     return new Promise((resolve) => {
-      const pythonCmd = process.platform === "win32" ? "python" : "python3";
       const baseDir = path.join(__dirname, "..");
-
-      // Use venv python if available, otherwise fall back to system python3
-      const venvPython = path.join(baseDir, ".venv", "bin", "python3");
-      const pythonBin = process.platform === "win32" ? "python" : venvPython;
+      const venvPython = process.platform === "win32"
+        ? path.join(baseDir, ".venv", "Scripts", "python.exe")
+        : path.join(baseDir, ".venv", "bin", "python3");
 
       function sendOutput(data) {
         if (mainWindow && !mainWindow.isDestroyed()) {
@@ -128,7 +171,7 @@ async function createWindow() {
       }
 
       function runCommand(args, callback) {
-        const proc = spawn(pythonBin, args, {
+        const proc = spawn(venvPython, args, {
           cwd: baseDir,
           stdio: ["pipe", "pipe", "pipe"],
         });

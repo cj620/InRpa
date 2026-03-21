@@ -65,7 +65,13 @@
       "Bash(/Users/mima0000/Desktop/AI/InRpa/.venv/bin/python3 -m pip install playwright_stealth)",
       "Bash(/Users/mima0000/Desktop/AI/InRpa/.venv/bin/python3 -c \"from playwright_stealth import stealth; print\\(type\\(stealth\\)\\); print\\(dir\\(stealth\\)\\)\")",
       "Bash(/Users/mima0000/Desktop/AI/InRpa/.venv/bin/python3 -c \"from playwright_stealth.stealth import stealth; print\\(type\\(stealth\\)\\); print\\(hasattr\\(stealth, ''__callable__''\\)\\)\")",
-      "Bash(/Users/mima0000/Desktop/AI/InRpa/.venv/bin/python3 -c \":*)"
+      "Bash(/Users/mima0000/Desktop/AI/InRpa/.venv/bin/python3 -c \":*)",
+      "Bash(ls /Users/mima0000/Desktop/AI/InRpa/*.js)",
+      "Bash(node --check electron/main.js)",
+      "Bash(ls /Users/mima0000/Desktop/AI/InRpa/electron-builder* /Users/mima0000/Desktop/AI/InRpa/forge.config*)",
+      "Bash(ls /Users/mima0000/Desktop/AI/InRpa/*.json)",
+      "Bash(node -e \"const p = require\\(''''electron/preload''''\\); console.log\\(p\\)\")",
+      "Bash(node -e \"const {contextBridge, ipcRenderer} = require\\(''electron''\\); console.log\\(''electron ok''\\)\")"
     ],
     "dangerouslySkipPermissions": true,
     "bypassPermissions": true

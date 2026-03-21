@@ -150,8 +150,9 @@ export default function SettingsPanel({ theme, onThemeChange }) {
   const [testState, setTestState] = useState(null); // null | "loading" | "success" | "error"
   const [testMsg, setTestMsg] = useState("");
   const [toast, setToast] = useState(false);
-  const [installState, setInstallState] = useState("idle"); // idle | installing | success | error
+  const [installState, setInstallState] = useState("idle"); // idle | installing | success | error | installed
   const [installLog, setInstallLog] = useState("");
+  const [playwrightInfo, setPlaywrightInfo] = useState(null); // { version, chromium }
 
   const dirty = settings && original && !deepEqual(settings, original);
 
@@ -162,6 +163,17 @@ export default function SettingsPanel({ theme, onThemeChange }) {
       setCloudUrl(contextSettings?.cloud_url || "http://localhost:8000");
     }
   }, [contextSettings, original]);
+
+  useEffect(() => {
+    if (installState !== "idle") return;
+    if (!window.electronAPI?.checkPlaywright) return;
+    window.electronAPI.checkPlaywright().then((result) => {
+      if (result.installed) {
+        setInstallState("installed");
+        setPlaywrightInfo({ version: result.version, chromium: result.chromium });
+      }
+    });
+  }, [installState]);
 
   if ((contextLoading && !settings) || !settings) {
     return (
@@ -233,6 +245,7 @@ export default function SettingsPanel({ theme, onThemeChange }) {
     if (installState === "installing") return;
     setInstallState("installing");
     setInstallLog("");
+    setPlaywrightInfo(null);
 
     let removeListener;
     try {
@@ -241,7 +254,16 @@ export default function SettingsPanel({ theme, onThemeChange }) {
       });
 
       const result = await window.electronAPI.installPlaywright();
-      setInstallState(result.success ? "success" : "error");
+      if (result.success) {
+        setInstallState("installed");
+        // Re-check to get version info
+        const check = await window.electronAPI.checkPlaywright();
+        if (check.installed) {
+          setPlaywrightInfo({ version: check.version, chromium: check.chromium });
+        }
+      } else {
+        setInstallState("error");
+      }
     } catch (err) {
       setInstallState("error");
       setInstallLog((prev) => prev + `\nError: ${err.message}\n`);
@@ -449,13 +471,18 @@ export default function SettingsPanel({ theme, onThemeChange }) {
               type="button"
               className={`sp-btn-test ${installState === "installing" ? "sp-btn-test--loading" : ""}`}
               onClick={handleInstallPlaywright}
-              disabled={installState === "installing"}
+              disabled={installState === "installing" || installState === "installed"}
             >
               {installState === "idle" && "安装"}
               {installState === "installing" && <><SpinnerIcon /> 安装中...</>}
-              {installState === "success" && <><CheckIcon /> 安装完成</>}
+              {(installState === "success" || installState === "installed") && <><CheckIcon /> 已安装</>}
               {installState === "error" && <><XIcon /> 安装失败</>}
             </button>
+            {playwrightInfo && (
+              <span className="sp-readonly" style={{ marginLeft: 8, fontSize: 12, opacity: 0.7 }}>
+                v{playwrightInfo.version} · {playwrightInfo.chromium}
+              </span>
+            )}
           </div>
           {installLog && (
             <pre
