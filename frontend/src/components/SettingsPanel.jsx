@@ -81,6 +81,19 @@ function ChevronIcon() {
   );
 }
 
+function EnvStatusIcon({ status }) {
+  if (status === "checking") {
+    return <span className="sp-env-spinner"><SpinnerIcon /></span>;
+  }
+  if (status === "ok") {
+    return <span className="sp-env-check"><CheckIcon /></span>;
+  }
+  if (status === "error") {
+    return <span className="sp-env-x"><XIcon /></span>;
+  }
+  return <span className="sp-env-idle">○</span>;
+}
+
 function CustomSelect({ value, options, onChange }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -150,9 +163,14 @@ export default function SettingsPanel({ theme, onThemeChange }) {
   const [testState, setTestState] = useState(null); // null | "loading" | "success" | "error"
   const [testMsg, setTestMsg] = useState("");
   const [toast, setToast] = useState(false);
-  const [installState, setInstallState] = useState("idle"); // idle | installing | success | error | installed
-  const [installLog, setInstallLog] = useState("");
-  const [playwrightInfo, setPlaywrightInfo] = useState(null); // { version, chromium }
+  const [envStatus, setEnvStatus] = useState({
+    python:   { status: "idle" },    // idle | checking | ok | error
+    node:     { status: "idle" },
+    venv:     { status: "idle" },
+    playwright: { status: "idle" },
+    cloudBackend: { status: "idle" },
+    aiApi:    { status: "idle" },
+  });
 
   const dirty = settings && original && !deepEqual(settings, original);
 
@@ -165,15 +183,27 @@ export default function SettingsPanel({ theme, onThemeChange }) {
   }, [contextSettings, original]);
 
   useEffect(() => {
-    if (installState !== "idle") return;
-    if (!window.electronAPI?.checkPlaywright) return;
-    window.electronAPI.checkPlaywright().then((result) => {
-      if (result.installed) {
-        setInstallState("installed");
-        setPlaywrightInfo({ version: result.version, chromium: result.chromium });
-      }
+    if (!window.electronAPI?.checkEnv) return;
+    // Set all to checking
+    setEnvStatus({
+      python: { status: "checking" },
+      node: { status: "checking" },
+      venv: { status: "checking" },
+      playwright: { status: "checking" },
+      cloudBackend: { status: "checking" },
+      aiApi: { status: "idle" }, // AI API requires manual trigger
     });
-  }, [installState]);
+    window.electronAPI.checkEnv().then((results) => {
+      setEnvStatus({
+        python:   { status: results.python.ok ? "ok" : "error",   version: results.python.version,   error: results.python.error },
+        node:     { status: results.node.ok ? "ok" : "error",     version: results.node.version,     error: results.node.error },
+        venv:     { status: results.venv.ok ? "ok" : "error",     error: results.venv.error },
+        playwright: { status: results.playwright?.ok ? "ok" : "error", version: results.playwright?.version, chromium: results.playwright?.chromium, error: results.playwright?.error },
+        cloudBackend: { status: results.cloudBackend.ok ? "ok" : "error", statusCode: results.cloudBackend.status, error: results.cloudBackend.error },
+        aiApi: { status: "idle" },
+      });
+    });
+  }, []);
 
   if ((contextLoading && !settings) || !settings) {
     return (
@@ -241,37 +271,7 @@ export default function SettingsPanel({ theme, onThemeChange }) {
     }, 4000);
   };
 
-  const handleInstallPlaywright = async () => {
-    if (installState === "installing") return;
-    setInstallState("installing");
-    setInstallLog("");
-    setPlaywrightInfo(null);
-
-    let removeListener;
-    try {
-      removeListener = window.electronAPI.onPlaywrightInstallOutput((data) => {
-        setInstallLog((prev) => prev + data);
-      });
-
-      const result = await window.electronAPI.installPlaywright();
-      if (result.success) {
-        setInstallState("installed");
-        // Re-check to get version info
-        const check = await window.electronAPI.checkPlaywright();
-        if (check.installed) {
-          setPlaywrightInfo({ version: check.version, chromium: check.chromium });
-        }
-      } else {
-        setInstallState("error");
-      }
-    } catch (err) {
-      setInstallState("error");
-      setInstallLog((prev) => prev + `\nError: ${err.message}\n`);
-    } finally {
-      removeListener?.();
-    }
-  };
-
+  
   return (
     <div className="settings-panel">
       <div className="settings-panel-header">
@@ -462,49 +462,29 @@ export default function SettingsPanel({ theme, onThemeChange }) {
           </div>
         </div>
 
-        {/* Card 4: Playwright Installation */}
+        {/* Card 4: Runtime Environment */}
         <div className="sp-card">
-          <div className="sp-card-header">依赖安装</div>
-          <div className="sp-field sp-field--row">
-            <label className="sp-label">Playwright 浏览器</label>
-            <button
-              type="button"
-              className={`sp-btn-test ${installState === "installing" ? "sp-btn-test--loading" : ""}`}
-              onClick={handleInstallPlaywright}
-              disabled={installState === "installing" || installState === "installed"}
-            >
-              {installState === "idle" && "安装"}
-              {installState === "installing" && <><SpinnerIcon /> 安装中...</>}
-              {(installState === "success" || installState === "installed") && <><CheckIcon /> 已安装</>}
-              {installState === "error" && <><XIcon /> 安装失败</>}
-            </button>
-            {playwrightInfo && (
-              <span className="sp-readonly" style={{ marginLeft: 8, fontSize: 12, opacity: 0.7 }}>
-                v{playwrightInfo.version} · {playwrightInfo.chromium}
+          <div className="sp-card-header">运行环境</div>
+          {[
+            { key: "python",       label: "Python",       value: envStatus.python.version,   extra: null },
+            { key: "node",         label: "Node.js",      value: envStatus.node.version,     extra: null },
+            { key: "venv",         label: ".venv",        value: envStatus.venv.ok ? "正常" : null, extra: null },
+            { key: "playwright",   label: "Playwright",   value: envStatus.playwright.version, extra: envStatus.playwright.chromium },
+            { key: "cloudBackend", label: "云端后端 :8000", value: envStatus.cloudBackend.ok ? `HTTP ${envStatus.cloudBackend.statusCode}` : null, extra: null },
+            { key: "aiApi",        label: "AI API",        value: envStatus.aiApi.status === "ok" ? "正常" : null, extra: null },
+          ].map(({ key, label, value, extra }) => (
+            <div key={key} className="sp-field sp-field--row">
+              <label className="sp-label">{label}</label>
+              <EnvStatusIcon status={envStatus[key].status} />
+              <span className={`sp-env-value ${envStatus[key].status === "error" ? "sp-env-value--error" : ""}`}>
+                {envStatus[key].status === "checking" && "检测中..."}
+                {envStatus[key].status === "idle" && (value || "—")}
+                {envStatus[key].status === "ok" && (value || "正常")}
+                {envStatus[key].status === "error" && (envStatus[key].error || "错误")}
+                {extra && <span style={{ opacity: 0.6 }}> · {extra}</span>}
               </span>
-            )}
-          </div>
-          {installLog && (
-            <pre
-              className="sp-install-log"
-              style={{
-                marginTop: 8,
-                fontSize: 11,
-                fontFamily: "var(--font-mono)",
-                color: "var(--text-secondary)",
-                background: "var(--bg-primary)",
-                border: "1px solid var(--border)",
-                borderRadius: 6,
-                padding: "8px 10px",
-                maxHeight: 160,
-                overflowY: "auto",
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-all",
-              }}
-            >
-              {installLog}
-            </pre>
-          )}
+            </div>
+          ))}
         </div>
       </div>
 
