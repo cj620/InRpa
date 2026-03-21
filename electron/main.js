@@ -212,13 +212,16 @@ print(json.dumps(info))
     // 4. Playwright
     try {
       const pwScript = `
-from playwright.sync_api import sync_playwright
+import playwright
 import json
 try:
+    from playwright.sync_api import sync_playwright
     p = sync_playwright().start()
-    info = {"version": p._playwright.version, "chromium": p.chromium.name}
+    chromium_name = p.chromium.name
     p.stop()
-    print(json.dumps({"ok": True, **info}))
+    print(json.dumps({"ok": True, "version": playwright.__version__, "chromium": chromium_name}))
+except ImportError:
+    print(json.dumps({"ok": False, "error": "Playwright 未安装"}))
 except Exception as e:
     print(json.dumps({"ok": False, "error": str(e)}))
 `;
