@@ -67,3 +67,22 @@ export async function updateScriptMeta(name, { tags, description } = {}) {
     body: JSON.stringify(body),
   });
 }
+
+export async function moveScriptsBatch(scriptNames, folderName) {
+  return req("/api/scripts/batch-move", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ script_names: scriptNames, folder: folderName }),
+  });
+}
+
+export async function updateScriptsMetaBatch(scriptNames, { tags, description } = {}) {
+  const body = { script_names: scriptNames };
+  if (tags !== undefined) body.tags = tags;
+  if (description !== undefined) body.description = description;
+  return req("/api/scripts/batch-meta", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}

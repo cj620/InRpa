@@ -19,7 +19,9 @@ from backend.scripts_data import (
     rename_folder as _rename_folder,
     delete_folder as _delete_folder,
     move_script as _move_script,
+    move_scripts_batch,
     update_script_meta as _update_script_meta,
+    update_scripts_meta_batch,
     get_script_meta,
 )
 from backend.drafts import read_script_content
@@ -106,6 +108,27 @@ async def move_script(name: str, body: dict):
 async def update_script_meta(name: str, body: dict):
     _update_script_meta(name, tags=body.get("tags"), description=body.get("description"))
     return {"message": "updated"}
+
+
+@app.put("/api/scripts/batch-move")
+async def batch_move_scripts(body: dict):
+    script_names = body.get("script_names", [])
+    folder_name = body.get("folder")
+    if not script_names:
+        return JSONResponse(status_code=400, content={"error": "script_names required"})
+    result = move_scripts_batch(script_names, folder_name)
+    return result
+
+
+@app.put("/api/scripts/batch-meta")
+async def batch_update_meta(body: dict):
+    script_names = body.get("script_names", [])
+    tags = body.get("tags")
+    description = body.get("description")
+    if not script_names:
+        return JSONResponse(status_code=400, content={"error": "script_names required"})
+    result = update_scripts_meta_batch(script_names, tags=tags, description=description)
+    return result
 
 
 @app.get("/api/scripts/{name}/content")

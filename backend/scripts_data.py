@@ -109,6 +109,40 @@ def get_script_meta(script_name: str) -> dict:
     return _load()["scripts"].get(script_name, {})
 
 
+def move_scripts_batch(script_names: list, folder_name) -> dict:
+    """Move multiple scripts to a folder. Returns {succeeded: [names], failed: [(name, reason)]}."""
+    data = _load()
+    succeeded = []
+    failed = []
+    for name in script_names:
+        if name not in data["scripts"]:
+            data["scripts"][name] = {}
+        if folder_name:
+            data["scripts"][name]["folder"] = folder_name
+        else:
+            data["scripts"][name].pop("folder", None)
+        succeeded.append(name)
+    _save(data)
+    return {"succeeded": succeeded, "failed": failed}
+
+
+def update_scripts_meta_batch(script_names: list, tags=None, description=None) -> dict:
+    """Update tags/description for multiple scripts. Returns {succeeded: [names], failed: [(name, reason)]}."""
+    data = _load()
+    succeeded = []
+    failed = []
+    for name in script_names:
+        if name not in data["scripts"]:
+            data["scripts"][name] = {}
+        if tags is not None:
+            data["scripts"][name]["tags"] = tags
+        if description is not None:
+            data["scripts"][name]["description"] = description
+        succeeded.append(name)
+    _save(data)
+    return {"succeeded": succeeded, "failed": failed}
+
+
 def build_folder_groups(scripts: list) -> list:
     """Return scripts grouped into folder objects (enriched with metadata)."""
     data = _load()
