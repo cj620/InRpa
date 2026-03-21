@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
+import MoveToDialog from "./MoveToDialog";
 import "./FilesPanel.css";
 
 function formatSize(bytes) {
@@ -35,6 +36,7 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
   const menuBtnRef = useRef(null);
   const cancelRef = useRef(null);
   const [activeScript, setActiveScript] = useState(null);
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
 
   useEffect(() => {
     if (selectedScripts.size > 0) {
@@ -196,7 +198,8 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
                             onClick={(e) => {
                               e.stopPropagation();
                               setMenuOpen(null);
-                              // TODO: trigger move modal (wired in Task 7)
+                              setActiveScript(s);
+                              setMoveDialogOpen(true);
                             }}
                           >
                             移动到...
@@ -234,7 +237,7 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
           <div className="batch-bar">
             <span className="batch-bar-count" aria-live="polite" aria-atomic="true">已选 {selectedScripts.size} 项</span>
             <div className="batch-bar-sep" />
-            <button type="button" className="batch-bar-btn" onClick={() => {/* TODO: wired in Task 7 */}}>
+            <button type="button" className="batch-bar-btn" onClick={() => { setActiveScript(null); setMoveDialogOpen(true); }}>
               移动到...
             </button>
             <button type="button" className="batch-bar-btn" onClick={() => {/* TODO: wired in Task 7 */}}>
@@ -255,6 +258,17 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
           </div>
         )}
       </div>
+      {moveDialogOpen && (
+        <MoveToDialog
+          folders={folders}
+          scriptCount={activeScript ? 1 : selectedScripts.size}
+          onConfirm={async (targetFolder) => {
+            setMoveDialogOpen(false);
+            // TODO: wire API call in Task 10
+          }}
+          onCancel={() => setMoveDialogOpen(false)}
+        />
+      )}
     </div>
   );
 }

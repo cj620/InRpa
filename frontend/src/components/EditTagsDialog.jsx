@@ -2,11 +2,12 @@ import React, { useState, useRef, useEffect } from "react";
 import "./MoveToDialog.css";
 import "./EditTagsDialog.css";
 
-export default function EditTagsDialog({ script, mode = "tags", allTags = [], onSave, onCancel }) {
+export default function EditTagsDialog({ script, scriptCount, mode = "tags", allTags = [], onSave, onCancel }) {
   const isDescription = mode === "description";
+  const isBatch = scriptCount != null;
 
   const [tags, setTags] = useState(
-    isDescription ? [] : Array.isArray(script.tags) ? [...script.tags] : []
+    isDescription ? [] : isBatch ? [] : Array.isArray(script.tags) ? [...script.tags] : []
   );
   const [description, setDescription] = useState(
     isDescription ? (script.description || "") : ""
@@ -56,7 +57,8 @@ export default function EditTagsDialog({ script, mode = "tags", allTags = [], on
       <div className="dialog-box" onClick={(e) => e.stopPropagation()}>
         <div className="dialog-header">
           <span className="dialog-title">
-            {isDescription ? "编辑描述" : "编辑标签"} — {script.name}
+            {isDescription ? "编辑描述" : "编辑标签"}
+            {scriptCount != null ? ` — 已选择 ${scriptCount} 个脚本` : ` — ${script.name}`}
           </span>
           <button className="dialog-close" onClick={onCancel} title="关闭">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -66,7 +68,7 @@ export default function EditTagsDialog({ script, mode = "tags", allTags = [], on
         </div>
 
         <div className="edit-dialog-body">
-          {isDescription ? (
+          {scriptCount == null && isDescription ? (
             <textarea
               className="edit-dialog-desc"
               value={description}
