@@ -67,6 +67,7 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
                   <input
                     type="checkbox"
                     className="files-checkbox"
+                    aria-label="全选所有文件"
                     checked={scripts.length > 0 && selectedScripts.size === scripts.length}
                     onChange={(e) => {
                       if (e.target.checked) {
@@ -92,8 +93,10 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
                     <input
                       type="checkbox"
                       className="files-checkbox"
+                      aria-label={`选择文件 ${s.name}`}
                       checked={selectedScripts.has(s.name)}
                       onChange={(e) => {
+                        e.stopPropagation();
                         setSelectedScripts((prev) => {
                           const next = new Set(prev);
                           if (e.target.checked) next.add(s.name);
