@@ -79,6 +79,20 @@
   width: 80px;
 }
 
+.files-th-check,
+.files-check {
+  width: 40px;
+  min-width: 40px;
+  text-align: center;
+}
+
+.files-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #6C5CE7;
+}
+
 .files-row {
   transition: background 0.12s;
 }

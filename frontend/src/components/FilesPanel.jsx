@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import "./FilesPanel.css";
 
 function formatSize(bytes) {
@@ -29,6 +29,8 @@ function countLines(size) {
 }
 
 export default function FilesPanel({ folders, selectedFolder, onEdit }) {
+  const [selectedScripts, setSelectedScripts] = useState(new Set());
+
   const scripts = useMemo(() => {
     if (!selectedFolder || selectedFolder === "all") {
       return (folders || []).flatMap((f) => f.scripts || []);
@@ -61,6 +63,20 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
           <table className="files-table">
             <thead>
               <tr>
+                <th className="files-th-check" style={{ width: 40 }}>
+                  <input
+                    type="checkbox"
+                    className="files-checkbox"
+                    checked={scripts.length > 0 && selectedScripts.size === scripts.length}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedScripts(new Set(scripts.map((s) => s.name)));
+                      } else {
+                        setSelectedScripts(new Set());
+                      }
+                    }}
+                  />
+                </th>
                 <th className="files-th-name">文件名</th>
                 <th className="files-th-status">状态</th>
                 <th className="files-th-size">大小</th>
@@ -72,6 +88,21 @@ export default function FilesPanel({ folders, selectedFolder, onEdit }) {
             <tbody>
               {scripts.map((s) => (
                 <tr key={s.name} className={`files-row ${s.is_draft ? "files-row-draft" : ""}`}>
+                  <td className="files-check">
+                    <input
+                      type="checkbox"
+                      className="files-checkbox"
+                      checked={selectedScripts.has(s.name)}
+                      onChange={(e) => {
+                        setSelectedScripts((prev) => {
+                          const next = new Set(prev);
+                          if (e.target.checked) next.add(s.name);
+                          else next.delete(s.name);
+                          return next;
+                        });
+                      }}
+                    />
+                  </td>
                   <td className="files-name">
                     <span className="files-name-icon">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
