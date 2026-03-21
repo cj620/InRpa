@@ -130,3 +130,11 @@ export function streamAIChat({ code, message, history }, onChunk, onDone, onErro
     });
   return () => controller.abort();
 }
+
+export async function createScript(name, folder) {
+  return req("/api/scripts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, folder }),
+  });
+}

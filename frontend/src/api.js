@@ -30,4 +30,5 @@ export {
   updateSettings,
   testAIConnection,
   streamAIChat,
+  createScript,
 } from "./localApi";
