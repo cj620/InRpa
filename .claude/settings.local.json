@@ -54,7 +54,18 @@
       "Bash(\"/Users/mima0000/Desktop/AI/InRpa/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron\" \"/Users/mima0000/Desktop/AI/InRpa/electron/test_main.js\")",
       "Bash(brew list:*)",
       "WebSearch",
-      "Bash(find . -name \".DS_Store\" -type f -delete)"
+      "Bash(find . -name \".DS_Store\" -type f -delete)",
+      "Bash(python3 -c \"from playwright.async_api import async_playwright; print\\(''playwright OK''\\)\")",
+      "Bash(.venv/bin/python3 -c \"import sys; print\\(sys.executable\\)\")",
+      "Bash(.venv/bin/python3 -m pip install playwright)",
+      "Bash(.venv/bin/python3 -m ensurepip --upgrade)",
+      "Bash(.venv/bin/python3 -c \"from playwright.async_api import async_playwright; print\\(''playwright import OK''\\)\")",
+      "Bash(.venv/bin/python3 -m playwright install chromium)",
+      "Bash(.venv/bin/python3 -c \":*)",
+      "Bash(/Users/mima0000/Desktop/AI/InRpa/.venv/bin/python3 -m pip install playwright_stealth)",
+      "Bash(/Users/mima0000/Desktop/AI/InRpa/.venv/bin/python3 -c \"from playwright_stealth import stealth; print\\(type\\(stealth\\)\\); print\\(dir\\(stealth\\)\\)\")",
+      "Bash(/Users/mima0000/Desktop/AI/InRpa/.venv/bin/python3 -c \"from playwright_stealth.stealth import stealth; print\\(type\\(stealth\\)\\); print\\(hasattr\\(stealth, ''__callable__''\\)\\)\")",
+      "Bash(/Users/mima0000/Desktop/AI/InRpa/.venv/bin/python3 -c \":*)"
     ],
     "dangerouslySkipPermissions": true,
     "bypassPermissions": true

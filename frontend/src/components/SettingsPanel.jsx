@@ -150,6 +150,8 @@ export default function SettingsPanel({ theme, onThemeChange }) {
   const [testState, setTestState] = useState(null); // null | "loading" | "success" | "error"
   const [testMsg, setTestMsg] = useState("");
   const [toast, setToast] = useState(false);
+  const [installState, setInstallState] = useState("idle"); // idle | installing | success | error
+  const [installLog, setInstallLog] = useState("");
 
   const dirty = settings && original && !deepEqual(settings, original);
 
@@ -225,6 +227,27 @@ export default function SettingsPanel({ theme, onThemeChange }) {
       setTestState(null);
       setTestMsg("");
     }, 4000);
+  };
+
+  const handleInstallPlaywright = async () => {
+    if (installState === "installing") return;
+    setInstallState("installing");
+    setInstallLog("");
+
+    let removeListener;
+    try {
+      removeListener = window.electronAPI.onPlaywrightInstallOutput((data) => {
+        setInstallLog((prev) => prev + data);
+      });
+
+      const result = await window.electronAPI.installPlaywright();
+      setInstallState(result.success ? "success" : "error");
+    } catch (err) {
+      setInstallState("error");
+      setInstallLog((prev) => prev + `\nError: ${err.message}\n`);
+    } finally {
+      removeListener?.();
+    }
   };
 
   return (
@@ -415,6 +438,46 @@ export default function SettingsPanel({ theme, onThemeChange }) {
             <label className="sp-label">版本</label>
             <span className="sp-readonly">1.0.0</span>
           </div>
+        </div>
+
+        {/* Card 4: Playwright Installation */}
+        <div className="sp-card">
+          <div className="sp-card-header">依赖安装</div>
+          <div className="sp-field sp-field--row">
+            <label className="sp-label">Playwright 浏览器</label>
+            <button
+              type="button"
+              className={`sp-btn-test ${installState === "installing" ? "sp-btn-test--loading" : ""}`}
+              onClick={handleInstallPlaywright}
+              disabled={installState === "installing"}
+            >
+              {installState === "idle" && "安装"}
+              {installState === "installing" && <><SpinnerIcon /> 安装中...</>}
+              {installState === "success" && <><CheckIcon /> 安装完成</>}
+              {installState === "error" && <><XIcon /> 安装失败</>}
+            </button>
+          </div>
+          {installLog && (
+            <pre
+              className="sp-install-log"
+              style={{
+                marginTop: 8,
+                fontSize: 11,
+                fontFamily: "var(--font-mono)",
+                color: "var(--text-secondary)",
+                background: "var(--bg-primary)",
+                border: "1px solid var(--border)",
+                borderRadius: 6,
+                padding: "8px 10px",
+                maxHeight: 160,
+                overflowY: "auto",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-all",
+              }}
+            >
+              {installLog}
+            </pre>
+          )}
         </div>
       </div>
 

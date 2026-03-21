@@ -10,8 +10,11 @@ const BACKEND_PORT = 8001;
 const isDev = !app.isPackaged;
 
 function startBackend() {
-  const pythonCmd = process.platform === "win32" ? "python" : "python3";
-  backendProcess = spawn(pythonCmd, [
+  const baseDir = path.join(__dirname, "..");
+  const venvPython = process.platform === "win32"
+    ? path.join(baseDir, ".venv", "Scripts", "python.exe")
+    : path.join(baseDir, ".venv", "bin", "python3");
+  backendProcess = spawn(venvPython, [
     "-m", "uvicorn", "backend.local_app:app",
     "--host", "127.0.0.1",
     "--port", String(BACKEND_PORT),
@@ -107,6 +110,64 @@ async function createWindow() {
     }
   });
   ipcMain.on("window-close", () => mainWindow.close());
+
+  // Install Playwright IPC handler
+  ipcMain.handle("install-playwright", async () => {
+    return new Promise((resolve) => {
+      const pythonCmd = process.platform === "win32" ? "python" : "python3";
+      const baseDir = path.join(__dirname, "..");
+
+      // Use venv python if available, otherwise fall back to system python3
+      const venvPython = path.join(baseDir, ".venv", "bin", "python3");
+      const pythonBin = process.platform === "win32" ? "python" : venvPython;
+
+      function sendOutput(data) {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send("playwright-install-output", data.toString());
+        }
+      }
+
+      function runCommand(args, callback) {
+        const proc = spawn(pythonBin, args, {
+          cwd: baseDir,
+          stdio: ["pipe", "pipe", "pipe"],
+        });
+        proc.stdout.on("data", (data) => sendOutput(data.toString()));
+        proc.stderr.on("data", (data) => sendOutput(data.toString()));
+        proc.on("error", (err) => sendOutput(`Error: ${err.message}\n`));
+        proc.on("close", (code) => callback(code));
+      }
+
+      // Step 0: ensurepip in venv (so -m pip works)
+      sendOutput("> python3 -m ensurepip\n");
+      runCommand(["-m", "ensurepip", "--upgrade"], (code0) => {
+        if (code0 !== 0) {
+          sendOutput("ensurepip failed (non-critical, continuing...)\n");
+        }
+
+        // Step 1: pip install playwright
+        sendOutput("> pip install playwright\n");
+        runCommand(["-m", "pip", "install", "playwright"], (code) => {
+          if (code !== 0) {
+            sendOutput(`pip install failed with code ${code}\n`);
+            resolve({ success: false, error: "pip install failed" });
+            return;
+          }
+          sendOutput("> playwright install chromium\n");
+          // Step 2: playwright install chromium
+          runCommand(["-m", "playwright", "install", "chromium"], (code2) => {
+            if (code2 !== 0) {
+              sendOutput(`playwright install failed with code ${code2}\n`);
+              resolve({ success: false, error: "playwright install failed" });
+              return;
+            }
+            sendOutput("Done.\n");
+            resolve({ success: true });
+          });
+        });
+      });
+    });
+  });
 }
 
 app.whenReady().then(async () => {

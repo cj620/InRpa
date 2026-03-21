@@ -7,7 +7,9 @@ import random
 from datetime import datetime
 
 from playwright.async_api import async_playwright, Page
-from playwright_stealth import stealth
+from playwright_stealth.stealth import Stealth
+
+_stealth = Stealth()
 
 import sys
 sys.path.insert(0, os.path.dirname(__file__))
@@ -30,7 +32,7 @@ async def create_browser(headless: bool = False) -> tuple:
         locale="en-US",
     )
     page = await context.new_page()
-    await stealth(page)
+    await _stealth.apply_stealth_async(page)
     page.set_default_timeout(config.PAGE_TIMEOUT)
     return pw, browser, page
 
