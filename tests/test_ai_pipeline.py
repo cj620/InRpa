@@ -1,4 +1,6 @@
 from backend.ai_assistant.skills import BaseSkill, SkillPipeline, SkillRegistry
+import pytest
+from backend.ai_assistant.pipeline import AssistantOrchestrator
 
 
 def test_skill_before_prompt_runs_in_configured_order():
@@ -24,3 +26,32 @@ def test_skill_before_prompt_runs_in_configured_order():
 
     assert events == ["s2", "s1"]
     assert rules == ["r2", "r1"]
+
+
+@pytest.mark.asyncio
+async def test_pipeline_retries_once_then_blocks():
+    class FakeValidator:
+        def validate(self, code, ctx):
+            return [{"code": "bad"}]
+
+    class FakeLLM:
+        def __init__(self):
+            self.calls = []
+
+        async def generate(self, ctx):
+            self.calls.append("generate")
+            return "bad_code"
+
+        async def repair(self, ctx, code, issues):
+            self.calls.append("repair")
+            return "still_bad"
+
+    orch = AssistantOrchestrator(
+        validator=FakeValidator(),
+        llm=FakeLLM(),
+        max_repair_attempts=1,
+    )
+    result = await orch.generate({"message": "x"})
+    assert result["status"] == "failed"
+    assert result["repair_attempts"] == 1
+    assert result["appliable"] is False

@@ -4,6 +4,7 @@ from unittest.mock import patch
 from httpx import AsyncClient, ASGITransport
 from backend.app import app
 from backend.settings import DEFAULT_SETTINGS
+from backend.ai_chat import build_system_prompt
 import copy
 
 
@@ -25,3 +26,13 @@ async def test_ai_chat_no_config():
             })
         # Should return 400 when API key is empty
         assert resp.status_code == 400
+
+
+def test_build_system_prompt_includes_capability_and_rules():
+    prompt = build_system_prompt(
+        capability={"python": {"ok": True, "version": "3.11.9"}},
+        rules=["rule-a", "rule-b"],
+    )
+    assert "能力快照" in prompt
+    assert "3.11.9" in prompt
+    assert "rule-a" in prompt

@@ -2,6 +2,7 @@
 
 import json
 import httpx
+from backend.ai_assistant.capability import CapabilityService
 from backend.settings import load_settings
 
 SYSTEM_PROMPT = """你是一个 Python 脚本助手。用户会给你一段 Python 脚本代码和修改需求。
@@ -22,9 +23,27 @@ SYSTEM_PROMPT = """你是一个 Python 脚本助手。用户会给你一段 Pyth
 ```"""
 
 
-def build_messages(code: str, message: str, history: list) -> list:
+capability_service = CapabilityService()
+
+
+def build_system_prompt(capability: dict | None = None, rules: list[str] | None = None) -> str:
+    if not capability and not rules:
+        return SYSTEM_PROMPT
+
+    chunks = [SYSTEM_PROMPT]
+    if capability:
+        chunks.append("\n\n当前运行环境能力快照（真实约束，必须遵守）：")
+        chunks.append(json.dumps(capability, ensure_ascii=False))
+    if rules:
+        chunks.append("\n\nSkill 规则补充：")
+        chunks.extend([f"- {rule}" for rule in rules])
+    chunks.append("\n\n严禁编造未确认可用的依赖或环境能力。")
+    return "\n".join(chunks)
+
+
+def build_messages(code: str, message: str, history: list, system_prompt: str | None = None) -> list:
     """Build message list for LLM API."""
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages = [{"role": "system", "content": system_prompt or SYSTEM_PROMPT}]
     for msg in history:
         messages.append({"role": msg["role"], "content": msg["content"]})
     user_content = f"当前脚本代码：\n```python\n{code}\n```\n\n用户需求：{message}"
@@ -44,8 +63,17 @@ async def stream_chat(code: str, message: str, history: list):
     api_url = ai_config.get("api_url", "https://api.openai.com/v1")
     model = ai_config.get("model", "gpt-4o")
     provider = ai_config.get("provider", "openai")
+    assistant_cfg = settings.get("ai_assistant", {})
+    capability_ttl = assistant_cfg.get("capability_ttl_sec", 60)
+    capability_service.ttl_sec = capability_ttl
+    capability = capability_service.get_snapshot()
+    rules = [
+        "只能使用能力快照中确认可用的依赖与 API",
+        "如果依赖不确定，明确说明并提供替代方案",
+    ]
+    system_prompt = build_system_prompt(capability=capability, rules=rules)
 
-    messages = build_messages(code, message, history)
+    messages = build_messages(code, message, history, system_prompt=system_prompt)
 
     if provider == "anthropic":
         url = f"{api_url}/messages"
@@ -58,7 +86,7 @@ async def stream_chat(code: str, message: str, history: list):
             "model": model,
             "max_tokens": 4096,
             "stream": True,
-            "system": SYSTEM_PROMPT,
+            "system": system_prompt,
             "messages": [m for m in messages if m["role"] != "system"],
         }
     else:
