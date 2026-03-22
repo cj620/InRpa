@@ -10,7 +10,7 @@ UNSORTED_KEY = "_unsorted"
 
 DEFAULT_DATA: dict = {
     "folders": [],
-    "scripts": {},  # { script_name: { folder?, tags, description } }
+    "scripts": {},  # { script_name: { folder?, tags, description, inputs_schema, outputs_schema } }
 }
 
 
@@ -106,7 +106,14 @@ def update_script_meta(
 
 
 def get_script_meta(script_name: str) -> dict:
-    return _load()["scripts"].get(script_name, {})
+    meta = _load()["scripts"].get(script_name, {})
+    return {
+        "folder": meta.get("folder"),
+        "tags": meta.get("tags", []),
+        "description": meta.get("description", ""),
+        "inputs_schema": meta.get("inputs_schema", {"type": "object", "properties": {}}),
+        "outputs_schema": meta.get("outputs_schema", {"type": "object", "properties": {}}),
+    }
 
 
 def move_scripts_batch(script_names: list, folder_name) -> dict:
@@ -172,6 +179,8 @@ def build_folder_groups(scripts: list) -> list:
             "tags": meta.get("tags", []),
             "description": meta.get("description", ""),
             "folder": meta.get("folder"),
+            "inputs_schema": meta.get("inputs_schema", {"type": "object", "properties": {}}),
+            "outputs_schema": meta.get("outputs_schema", {"type": "object", "properties": {}}),
         }
         folder_name = meta.get("folder")
         if folder_name and folder_name in folder_map:

@@ -72,6 +72,8 @@ async def list_scripts():
             s["tags"] = meta.get("tags", [])
             s["description"] = meta.get("description", "")
             s["folder"] = meta.get("folder")
+            s["inputs_schema"] = meta.get("inputs_schema", {"type": "object", "properties": {}})
+            s["outputs_schema"] = meta.get("outputs_schema", {"type": "object", "properties": {}})
     return scripts
 
 
