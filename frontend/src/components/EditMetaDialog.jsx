@@ -11,11 +11,13 @@ export default function EditMetaDialog({ script, scriptCount, onSave, onCancel }
   );
   const [tagInput, setTagInput] = useState("");
   const tagInputRef = useRef(null);
+  const [tagsDirty, setTagsDirty] = useState(false);
 
   // Description state
   const [description, setDescription] = useState(
     isBatch ? "" : (script?.description || "")
   );
+  const [descriptionDirty, setDescriptionDirty] = useState(false);
 
   // Focus tag input on mount (for single mode)
   useEffect(() => {
@@ -27,12 +29,14 @@ export default function EditMetaDialog({ script, scriptCount, onSave, onCancel }
   const addTag = (tag) => {
     const trimmed = tag.trim().toLowerCase();
     if (trimmed && !tags.includes(trimmed)) {
+      setTagsDirty(true);
       setTags((prev) => [...prev, trimmed]);
     }
     setTagInput("");
   };
 
   const removeTag = (tag) => {
+    setTagsDirty(true);
     setTags((prev) => prev.filter((t) => t !== tag));
   };
 
@@ -46,7 +50,10 @@ export default function EditMetaDialog({ script, scriptCount, onSave, onCancel }
   };
 
   const handleSave = () => {
-    onSave({ tags, description: description.trim() });
+    const payload = {};
+    if (tagsDirty) payload.tags = tags;
+    if (descriptionDirty) payload.description = description.trim();
+    onSave(payload);
   };
 
   const handleTagInputChange = (e) => {
@@ -106,7 +113,10 @@ export default function EditMetaDialog({ script, scriptCount, onSave, onCancel }
             <textarea
               className="edit-dialog-desc"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                setDescriptionDirty(true);
+                setDescription(e.target.value);
+              }}
               placeholder="脚本描述（可选）"
               rows={3}
             />

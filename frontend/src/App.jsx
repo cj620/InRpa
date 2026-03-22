@@ -366,6 +366,7 @@ export default function App() {
                 folders={folders}
                 selectedFolder={selectedFolder}
                 onEdit={handleEditScript}
+                onRefresh={loadFolders}
               />
             </div>
           )}

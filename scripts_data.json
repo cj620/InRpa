@@ -9,9 +9,9 @@
     "scraper": {
       "folder": "test",
       "tags": [
-        "j"
+        "亚马逊"
       ],
-      "description": "hi"
+      "description": "商品查询"
     },
     "scraper_draft": {
       "tags": [

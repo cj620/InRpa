@@ -28,7 +28,7 @@ function formatTime(isoString) {
   return d.toLocaleDateString("zh-CN", { year: "numeric", month: "short", day: "numeric" });
 }
 
-export default function FilesPanel({ folders, selectedFolder, onEdit }) {
+export default function FilesPanel({ folders, selectedFolder, onEdit, onRefresh }) {
   const [selectedScripts, setSelectedScripts] = useState(new Set());
   const [menuOpen, setMenuOpen] = useState(null); // null or script name (s.name)
   const menuRef = useRef(null);
