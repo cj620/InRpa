@@ -5,10 +5,12 @@ export function useAIChat() {
     const [messages, setMessages] = useState([]);
     const [isStreaming, setIsStreaming] = useState(false);
     const [error, setError] = useState(null);
+    const [lastValidationFailure, setLastValidationFailure] = useState(null);
     const abortRef = useRef(null);
 
     const sendMessage = useCallback((code, userMessage) => {
         setError(null);
+        setLastValidationFailure(null);
 
         // Build history from existing messages
         const history = messages
@@ -24,6 +26,10 @@ export function useAIChat() {
         const abort = streamAIChat(
             { code, message: userMessage, history },
             (chunk) => {
+                if (chunk.type === "validation_failed") {
+                    setLastValidationFailure(chunk);
+                    return;
+                }
                 if (chunk.type === "text") {
                     setMessages((prev) => {
                         const updated = [...prev];
@@ -47,8 +53,9 @@ export function useAIChat() {
         if (abortRef.current) abortRef.current();
         setMessages([]);
         setError(null);
+        setLastValidationFailure(null);
         setIsStreaming(false);
     }, []);
 
-    return { messages, isStreaming, error, sendMessage, clearChat };
+    return { messages, isStreaming, error, lastValidationFailure, sendMessage, clearChat };
 }

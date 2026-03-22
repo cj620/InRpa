@@ -1,6 +1,11 @@
 from backend.ai_assistant.skills import BaseSkill, SkillPipeline, SkillRegistry
 import pytest
 from backend.ai_assistant.pipeline import AssistantOrchestrator
+from backend.ai_assistant.validators import (
+    validate_generated_code,
+    validate_imports_against_capability,
+    validate_playwright_preference,
+)
 
 
 def test_skill_before_prompt_runs_in_configured_order():
@@ -55,3 +60,61 @@ async def test_pipeline_retries_once_then_blocks():
     assert result["status"] == "failed"
     assert result["repair_attempts"] == 1
     assert result["appliable"] is False
+
+
+def test_validate_imports_rejects_unknown_dependency():
+    capability = {
+        "allowed_imports": {
+            "stdlib": ["json", "os"],
+            "third_party": ["playwright"],
+        }
+    }
+
+    issues = validate_imports_against_capability(
+        "import selenium\nfrom bs4 import BeautifulSoup\n",
+        capability,
+    )
+
+    assert [issue["import"] for issue in issues] == ["selenium", "bs4"]
+
+
+def test_validate_playwright_preference_requires_playwright_for_browser_tasks():
+    capability = {
+        "allowed_imports": {
+            "stdlib": ["json"],
+            "third_party": ["playwright"],
+        }
+    }
+    ctx = {
+        "message": "打开网页并点击登录按钮，抓取页面数据",
+        "code": "",
+    }
+
+    issues = validate_playwright_preference(
+        "import selenium\n",
+        ctx,
+        capability,
+    )
+
+    assert issues[0]["code"] == "playwright_required"
+
+
+def test_validate_generated_code_allows_playwright_and_stdlib():
+    capability = {
+        "allowed_imports": {
+            "stdlib": ["json", "asyncio"],
+            "third_party": ["playwright"],
+        }
+    }
+    ctx = {
+        "message": "使用 Playwright 打开网页",
+        "code": "from playwright.sync_api import sync_playwright\n",
+        "capability": capability,
+    }
+
+    issues = validate_generated_code(
+        "import json\nfrom playwright.sync_api import sync_playwright\n",
+        ctx,
+    )
+
+    assert issues == []

@@ -19,4 +19,5 @@ class CapabilitySnapshot(TypedDict, total=False):
     venv: CheckResult
     playwright: CheckResult
     cloudBackend: CheckResult
-
+    packages: dict[str, dict]
+    allowed_imports: dict[str, list[str]]

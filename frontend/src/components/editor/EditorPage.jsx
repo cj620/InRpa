@@ -166,6 +166,14 @@ export default function EditorPage({ scripts, logs, statuses, openScriptRef }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [editor, draftRunner]);
 
+  useEffect(() => {
+    if (!aiChat.lastValidationFailure) return;
+    toast.error(
+      aiChat.lastValidationFailure.message ||
+      "AI 生成失败：检测到未允许依赖，已改写一次但仍不符合当前环境。请改用 Playwright 方案。"
+    );
+  }, [aiChat.lastValidationFailure]);
+
   return (
     <div className="editor-page">
       <EditorToolbar
