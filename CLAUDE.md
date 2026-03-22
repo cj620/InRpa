@@ -1,5 +1,10 @@
 # CLAUDE.md
 
+<!--
+  This file is Claude Code-specific (claude.ai/code).
+  For other AI agents, please refer to README.md for project documentation.
+-->
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
