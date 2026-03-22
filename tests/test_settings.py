@@ -95,3 +95,12 @@ def test_default_settings_not_mutated():
     # Call save with a nested update — should not alter DEFAULT_SETTINGS
     settings_mod.save_settings({"ai": {"provider": "changed"}})
     assert settings_mod.DEFAULT_SETTINGS == original
+
+
+def test_default_settings_include_ai_assistant():
+    cfg = settings_mod.DEFAULT_SETTINGS
+    assert "ai_assistant" in cfg
+    ai_assistant = cfg["ai_assistant"]
+    assert ai_assistant["capability_ttl_sec"] == 60
+    assert ai_assistant["auto_repair_max_attempts"] == 1
+    assert ai_assistant["skills"]["enabled"] == []

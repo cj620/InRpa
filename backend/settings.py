@@ -17,6 +17,15 @@ DEFAULT_SETTINGS = {
         "api_key": "",
         "model": "gpt-4o"
     },
+    "ai_assistant": {
+        "capability_ttl_sec": 60,
+        "auto_repair_max_attempts": 1,
+        "skills": {
+            "enabled": [],
+            "order": [],
+            "configs": {}
+        }
+    },
     "editor": {
         "font_size": 14,
         "tab_size": 4,
