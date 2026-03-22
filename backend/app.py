@@ -15,6 +15,7 @@ from backend.scanner import scan_scripts
 from backend.runner import ScriptRunner
 from backend.settings import load_settings, save_settings
 from backend.ai_chat import stream_chat
+from backend.ai_assistant.capability import CapabilityService
 from backend.drafts import (
     read_script_content, read_draft, save_draft,
     delete_draft, publish_draft, get_draft_path,
@@ -33,6 +34,7 @@ SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "scripts"
 
 runner = ScriptRunner()
 connected_clients: list[WebSocket] = []
+capability_service = CapabilityService()
 
 
 @asynccontextmanager
@@ -254,6 +256,28 @@ async def publish_draft_endpoint(name: str):
     if publish_draft(SCRIPTS_DIR, name):
         return {"message": f"Draft published for '{name}'"}
     return JSONResponse(status_code=404, content={"error": "No draft to publish"})
+
+
+@app.get("/api/ai/capability")
+async def ai_capability():
+    settings = load_settings()
+    ttl = settings.get("ai_assistant", {}).get("capability_ttl_sec", 60)
+    capability_service.ttl_sec = ttl
+    return capability_service.get_snapshot()
+
+
+@app.get("/api/ai/skills")
+async def get_ai_skills():
+    settings = load_settings()
+    ai_assistant = settings.get("ai_assistant", {})
+    return {"skills": ai_assistant.get("skills", {"enabled": [], "order": [], "configs": {}})}
+
+
+@app.put("/api/ai/skills")
+async def update_ai_skills(body: dict):
+    updated = save_settings({"ai_assistant": {"skills": body}})
+    ai_assistant = updated.get("ai_assistant", {})
+    return {"skills": ai_assistant.get("skills", {"enabled": [], "order": [], "configs": {}})}
 
 
 @app.post("/api/ai/test")
