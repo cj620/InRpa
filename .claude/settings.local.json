@@ -71,7 +71,8 @@
       "Bash(ls /Users/mima0000/Desktop/AI/InRpa/electron-builder* /Users/mima0000/Desktop/AI/InRpa/forge.config*)",
       "Bash(ls /Users/mima0000/Desktop/AI/InRpa/*.json)",
       "Bash(node -e \"const p = require\\(''''electron/preload''''\\); console.log\\(p\\)\")",
-      "Bash(node -e \"const {contextBridge, ipcRenderer} = require\\(''electron''\\); console.log\\(''electron ok''\\)\")"
+      "Bash(node -e \"const {contextBridge, ipcRenderer} = require\\(''electron''\\); console.log\\(''electron ok''\\)\")",
+      "Bash(ls c:/Users/Administrator/Desktop/AI/rpa-mpv/.venv/Scripts/python*)"
     ],
     "dangerouslySkipPermissions": true,
     "bypassPermissions": true

@@ -7,7 +7,7 @@ let mainWindow;
 let backendProcess;
 
 const BACKEND_PORT = 8001;
-const isDev = !app.isPackaged;
+const isDev = !!process.defaultApp || !app.isPackaged;
 
 function startBackend() {
   const baseDir = path.join(__dirname, "..");
